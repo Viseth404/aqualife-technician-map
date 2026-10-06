@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { InstallButton } from "./PwaPrompts"
 
 export function LoginForm({ className, ...props }) {
   const { t } = useLanguage()
@@ -91,6 +92,9 @@ export function LoginForm({ className, ...props }) {
               </Field>
 
               <FieldDescription className="text-center">{t("adminOnly")}</FieldDescription>
+              <div className="flex justify-center">
+                <InstallButton variant="ghost" />
+              </div>
             </FieldGroup>
           </form>
 

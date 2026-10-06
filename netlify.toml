@@ -21,7 +21,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: blob: https:;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io https://router.project-osrm.org;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io https://router.project-osrm.org https://fonts.googleapis.com https://fonts.gstatic.com https://tile.openstreetmap.org;
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
@@ -40,3 +40,15 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# PWA: the app's "service worker" and manifest must always be checked for updates.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Content-Type = "application/manifest+json"

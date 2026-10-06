@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import CustomerCheck from "./CustomerCheck"
 import DeliveryFeeCard from "./DeliveryFeeCard"
+import { InstallButton } from "./PwaPrompts"
 
 export default function FieldView({ role, onExit }) {
   const { t, lang } = useLanguage()
@@ -40,6 +41,7 @@ export default function FieldView({ role, onExit }) {
             <Badge variant="secondary">{t(`role_${role}`)}</Badge>
           </div>
           <div className="flex items-center gap-1">
+            <InstallButton compact variant="ghost" />
             <LanguageSwitch variant="card" />
             {onExit ? (
               <Button variant="ghost" size="icon-sm" onClick={onExit} aria-label={t("backToDashboard")} title={t("backToDashboard")}>

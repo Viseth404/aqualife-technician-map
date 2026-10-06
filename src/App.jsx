@@ -23,6 +23,7 @@ import { SettingsProvider, useSettings } from './lib/settings';
 import SettingsSheet from './components/SettingsSheet';
 import Login from './components/Login';
 import FieldView from './components/FieldView';
+import { InstallButton } from './components/PwaPrompts';
 
 export default function App() {
   const { t } = useLanguage();
@@ -303,6 +304,7 @@ function Dashboard({ role, onFieldView }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <InstallButton compact />
             <LanguageSwitch />
             {/* Super admin: team, prices, office */}
             {role === 'superadmin' && (
