@@ -1,7 +1,7 @@
 // Main page: header, the map card (left), and side panels (right).
 // Holds the shared state: filter, draw mode, selected zone, customer point.
 import { useEffect, useMemo, useState } from 'react';
-import { CircleAlert, Info, LogOut, PanelRight, X } from 'lucide-react';
+import { CircleAlert, Info, LogOut, PanelRight, Smartphone, X } from 'lucide-react';
 import { useLanguage, LanguageSwitch } from './i18n';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { config } from './config';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { useMapData } from './hooks/useMapData';
-import { getDrivingDistance } from './lib/routes';
+import { useDrivingRoute } from './hooks/useDrivingRoute';
 import { reverseGeocode } from './lib/geocode';
 import { newId } from './lib/uuid';
 import MapCard from './components/MapCard';
@@ -21,6 +21,7 @@ import DeliveryFeeCard from './components/DeliveryFeeCard';
 import SavedCustomers from './components/SavedCustomers';
 import { deliveryFee } from './lib/pricing';
 import Login from './components/Login';
+import FieldView from './components/FieldView';
 
 export default function App() {
   const { t } = useLanguage();
@@ -35,26 +36,38 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  // Is this account on the admin list? (supabase/migrations/004_admin_allowlist.sql)
-  // undefined = checking, true/false = answer
-  const [isAdmin, setIsAdmin] = useState(isSupabaseConfigured ? undefined : true);
+  // Which role does this account have? (supabase/migrations/005_staff_roles.sql)
+  // undefined = checking, null = no access, 'admin' | 'sales' | 'technician'
+  const [role, setRole] = useState(isSupabaseConfigured ? undefined : 'admin');
   const userId = session?.user?.id;
   useEffect(() => {
     if (!isSupabaseConfigured || !userId) return;
-    setIsAdmin(undefined);
-    supabase.rpc('is_admin').then(({ data, error }) => {
-      // Function not created yet (migration 004 not run): keep the old behaviour.
-      if (error) setIsAdmin(true);
-      else setIsAdmin(data === true);
-    });
+    let cancelled = false;
+    setRole(undefined);
+    (async () => {
+      const { data, error } = await supabase.rpc('my_role');
+      if (cancelled) return;
+      if (!error) return setRole(data || null);
+      // Roles not set up yet (005 not run): fall back to the admin list (004), or allow if that's missing too.
+      const old = await supabase.rpc('is_admin');
+      if (!cancelled) setRole(old.error || old.data === true ? 'admin' : null);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
+
+  // Admins can preview the phone screen that sales/technicians see.
+  const [fieldPreview, setFieldPreview] = useState(false);
 
   if (session === undefined) return <CenteredMessage text={t('loading')} />;
   if (session === null) return <Login />;
-  if (isAdmin === undefined) return <CenteredMessage text={t('loading')} />;
-  if (isAdmin === false) return <NotAdmin email={session.user?.email} />;
+  if (role === undefined) return <CenteredMessage text={t('loading')} />;
+  if (role === null) return <NotAdmin email={session.user?.email} />;
+  if (role !== 'admin') return <FieldView role={role} />;
+  if (fieldPreview) return <FieldView role="admin" onExit={() => setFieldPreview(false)} />;
 
-  return <Dashboard />;
+  return <Dashboard onFieldView={() => setFieldPreview(true)} />;
 }
 
 // Shown to a logged-in account that is not on the admin list.
@@ -78,7 +91,7 @@ function NotAdmin({ email }) {
   );
 }
 
-function Dashboard() {
+function Dashboard({ onFieldView }) {
   const { t, lang } = useLanguage();
   const data = useMapData();
   const { technicians, zones, customers } = data;
@@ -114,25 +127,7 @@ function Dashboard() {
       setEditingZoneId(null); // lock the zone being edited too
     }
   };
-  const [route, setRoute] = useState(null); // driving route office -> customer
-
-  // Driving distance whenever the customer point moves.
-  useEffect(() => {
-    if (!customerPoint) {
-      setRoute(null);
-      return;
-    }
-    const controller = new AbortController();
-    setRoute({ status: 'loading' });
-    getDrivingDistance(config.office, customerPoint, controller.signal)
-      .then((r) => setRoute({ status: 'done', ...r }))
-      .catch((err) => {
-        if (err.name === 'AbortError') return;
-        console.error(err);
-        setRoute({ status: 'error' });
-      });
-    return () => controller.abort();
-  }, [customerPoint?.lat, customerPoint?.lng]);
+  const route = useDrivingRoute(customerPoint); // driving route office -> customer
 
   // ---------- "View All" filter ----------
   const visibleZones = useMemo(
@@ -297,6 +292,10 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
+            {/* Preview what sales/technicians see on their phones */}
+            <Button variant="outline" size="sm" onClick={onFieldView} title={t('fieldView')}>
+              <Smartphone /> <span className="hidden sm:inline">{t('fieldView')}</span>
+            </Button>
             {!isDesktop && (
               <Button variant="outline" size="sm" onClick={() => setPanelsOpen(true)}>
                 <PanelRight /> <span className="hidden sm:inline">{t('panels')}</span>

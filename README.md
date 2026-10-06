@@ -121,15 +121,26 @@ If you change env variables later, redeploy – Vite puts them in the build.
 
 ---
 
-## Security checklist
+## Security checklist & staff roles
 
 1. **Turn off public sign-up:** Supabase → Authentication → Sign In / Providers → switch off **Allow new users to sign up**.
-2. **Admins only:** run `supabase/migrations/004_admin_allowlist.sql`. Only accounts in `public.admins` can read or change data; anyone else sees an "not an admin" screen.
-3. **Add a new admin:** Authentication → Users → Add user (tick Auto Confirm), then in SQL Editor:
-   `insert into public.admins (user_id, email) select id, email from auth.users where email = 'new@example.com';`
-4. **Remove an admin:** `delete from public.admins where email = 'old@example.com';` (and delete the user in Authentication → Users).
-5. **Use HTTPS for daily use** (deploy to Vercel/Netlify). The Wi-Fi address `http://192.168…` is fine for testing in the office only.
-6. Never put the Supabase **service_role** key in `.env` or the app – only the **anon** key.
+2. **Run the SQL migrations in order** (SQL Editor): `004_admin_allowlist.sql`, then `005_staff_roles.sql`.
+3. **Roles**
+
+   | Role | Screen | Can change |
+   |---|---|---|
+   | `admin` | Full dashboard | Everything |
+   | `sales` | Phone screen: Customer Check + Delivery Fees | Nothing |
+   | `technician` | Phone screen: Customer Check + Delivery Fees | Nothing |
+
+   Saved customers (names, phones) are admin-only. Admins can preview the phone screen with **Field view**.
+4. **Add a staff member:** Authentication → Users → Add user (tick Auto Confirm), then in SQL Editor:
+   `insert into public.staff (user_id, email, role) select id, email, 'sales' from auth.users where email = 'new@example.com';`
+   (use `'admin'`, `'sales'` or `'technician'`)
+5. **Change a role:** `update public.staff set role = 'technician' where email = 'someone@example.com';`
+6. **Remove access:** `delete from public.staff where email = 'someone@example.com';` (and delete the user in Authentication → Users).
+7. **Use the HTTPS link** (Netlify) – "My location" only works on https.
+8. Never put the Supabase **service_role / secret** key in `.env` or the app – only the publishable/anon key.
 
 ---
 

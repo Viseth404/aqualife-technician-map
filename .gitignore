@@ -20,3 +20,7 @@ dist
 # Original image files not used by the app (kept on your computer only)
 public/icon.png
 public/464181173_*.jpg
+
+# Supabase CLI scratch files
+supabase/.temp
+supabase/.branches

@@ -31,8 +31,8 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # The app doesn't use camera, microphone, or GPS.
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    # GPS only for this site ("My location" on the phone screen); no camera, mic, or payments.
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self), payment=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 # Built files have unique names, so browsers can cache them for a long time.

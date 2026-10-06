@@ -2,7 +2,7 @@
 // Shows which zone + technician covers it, the driving distance from the
 // Aqualife office, and the delivery fee.
 import { useEffect, useState } from 'react';
-import { CircleAlert, CircleCheck, Crosshair, Loader2, MapPin, Search, UserPlus, X } from 'lucide-react';
+import { CircleAlert, CircleCheck, Crosshair, Loader2, LocateFixed, MapPin, Search, UserPlus, X } from 'lucide-react';
 import { useLanguage } from '@/i18n';
 import { config } from '@/config';
 import { newId } from '@/lib/uuid';
@@ -18,7 +18,21 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 
-export default function CustomerCheck({ point, onPointChange, picking, onTogglePicking, route, zones, technicians, onSaveCustomer }) {
+// Optional props (the phone screen for sales/technicians leaves them out):
+//   onTogglePicking – shows "Pick on map"
+//   onSaveCustomer  – shows "Save customer"
+//   onUseMyLocation – shows "My location" (uses the phone's GPS)
+export default function CustomerCheck({
+  point,
+  onPointChange,
+  picking,
+  onTogglePicking,
+  onUseMyLocation,
+  route,
+  zones,
+  technicians,
+  onSaveCustomer,
+}) {
   const { t, lang } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -47,6 +61,22 @@ export default function CustomerCheck({ point, onPointChange, picking, onToggleP
       controller.abort();
     };
   }, [query, lang]);
+
+  // "My location": ask the phone for its GPS position (needs https and permission).
+  const [locating, setLocating] = useState(null); // null | 'busy' | 'error'
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return setLocating('error');
+    setLocating('busy');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(null);
+        setQuery('');
+        onUseMyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => setLocating('error'),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  };
 
   const choose = (r) => {
     onPointChange(r);
@@ -117,10 +147,19 @@ export default function CustomerCheck({ point, onPointChange, picking, onToggleP
 
         {linkHint && <p className="text-xs text-amber-700">{t('shortLink')}</p>}
 
+        {locating === 'error' && <p className="text-xs text-destructive">{t('locationError')}</p>}
+
         <div className="flex gap-2">
-          <Button variant={picking ? 'default' : 'outline'} className="flex-1" onClick={onTogglePicking}>
-            <Crosshair /> {picking ? t('picking') : t('pickOnMap')}
-          </Button>
+          {onTogglePicking && (
+            <Button variant={picking ? 'default' : 'outline'} className="flex-1" onClick={onTogglePicking}>
+              <Crosshair /> {picking ? t('picking') : t('pickOnMap')}
+            </Button>
+          )}
+          {onUseMyLocation && (
+            <Button variant="outline" className="flex-1" onClick={useMyLocation} disabled={locating === 'busy'}>
+              {locating === 'busy' ? <Loader2 className="animate-spin" /> : <LocateFixed />} {t('myLocation')}
+            </Button>
+          )}
           {point && (
             <Button
               variant="ghost"
@@ -230,7 +269,7 @@ export default function CustomerCheck({ point, onPointChange, picking, onToggleP
               </div>
             )}
 
-            {assignedTech && (
+            {assignedTech && onSaveCustomer && (
               <SaveCustomerForm
                 key={`${point.lat},${point.lng}`}
                 busy={route?.status === 'loading'}
