@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { isAvailable, todayInPhnomPenh } from "@/lib/availability"
+import { useSettings } from "@/lib/settings"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -39,6 +40,7 @@ const emptyForm = { name: "", phone: "", color: config.colorPresets.blue, photoU
 
 export default function TechnicianManager({ technicians, onSave, onDelete, onFocus }) {
   const { t } = useLanguage()
+  const { office } = useSettings()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
 
@@ -71,8 +73,8 @@ export default function TechnicianManager({ technicians, onSave, onDelete, onFoc
       photoUrl: form.photoUrl.trim(),
       id: form.id || newId(),
       // New technician: small random offset so pins don't sit on top of each other.
-      lat: isNew ? config.office.lat + (Math.random() - 0.5) * 0.01 : form.lat,
-      lng: isNew ? config.office.lng + (Math.random() - 0.5) * 0.01 : form.lng,
+      lat: isNew ? office.lat + (Math.random() - 0.5) * 0.01 : form.lat,
+      lng: isNew ? office.lng + (Math.random() - 0.5) * 0.01 : form.lng,
     })
     setSheetOpen(false)
   }

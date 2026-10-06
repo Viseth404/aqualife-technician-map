@@ -94,8 +94,7 @@ Restart `npm run dev` after changing `.env`.
 ## 3. Settings to change (`src/config.js`)
 
 - `office.lat / office.lng` – **put your real Aqualife office here** (Google Maps → right-click your office → click the numbers to copy).
-- `deliveryFees` – price by driving distance: 0–20 km free, 21–25 km $5, 26–30 km $10, 31–35 km $15, 36–40 km $20.
-- `beyondLastRow` – over 40 km: +$5 for every extra 5 km (43 km → $25).
+- `deliveryFees` / `beyondLastRow` – starting prices only. After migration 006, a super admin changes prices (separately for moto and car) and the office in **Settings**.
 - `brandColor`, `colorPresets`, `starterTechnicians`.
 - `tileUrl`, `geocoderUrl`, `routingUrl` – the free map services (swap if you outgrow them).
 
@@ -124,11 +123,24 @@ If you change env variables later, redeploy – Vite puts them in the build.
 ## Security checklist & staff roles
 
 1. **Turn off public sign-up:** Supabase → Authentication → Sign In / Providers → switch off **Allow new users to sign up**.
-2. **Run the SQL migrations in order** (SQL Editor): `004_admin_allowlist.sql`, then `005_staff_roles.sql`.
-3. **Roles**
+2. **Run the SQL migrations in order** (SQL Editor): `004_admin_allowlist.sql`, `005_staff_roles.sql`, `006_superadmin_settings.sql`.
+3. **Server key for team management:** Netlify → Site configuration → Environment variables → add
+   `SUPABASE_SECRET_KEY` = Supabase → Project Settings → API Keys → **Secret key** (mark it *secret*, scope *Functions*), then redeploy.
+   This key is only used by `netlify/functions/admin-users.mjs` on Netlify's servers – never put it in `.env` or a `VITE_` variable.
+4. **Roles**
 
    | Role | Screen | Can change |
    |---|---|---|
+   | `superadmin` | Full dashboard + **Settings** | Everything, plus staff accounts, delivery prices (moto/car), office location |
+   | `admin` | Full dashboard | Map, zones, technicians, customers |
+   | `sales` | Phone screen: Customer Check + Delivery Fees | Nothing |
+   | `technician` | Phone screen: Customer Check + Delivery Fees | Nothing |
+
+5. **Manage staff in the app:** Settings → Team (super admin): create accounts, change roles, reset passwords, revoke access, delete.
+   You can't remove your own access, and there is always at least one super admin.
+6. **Use the HTTPS link** (Netlify) – "My location" and team management only work there.
+
+---|---|---|
    | `admin` | Full dashboard | Everything |
    | `sales` | Phone screen: Customer Check + Delivery Fees | Nothing |
    | `technician` | Phone screen: Customer Check + Delivery Fees | Nothing |

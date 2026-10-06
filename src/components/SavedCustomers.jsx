@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { VEHICLE_ICON } from "./DeliveryFeeCard"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,7 +90,10 @@ export default function SavedCustomers({ customers, technicians, onSelect, onDel
                             (c.fee === 0 ? (
                               <span className="shrink-0 text-xs font-medium text-green-600">{t("free")}</span>
                             ) : (
-                              <span className="shrink-0 text-sm font-semibold tabular-nums">{money(c.fee)}</span>
+                              <span className="shrink-0 text-sm font-semibold tabular-nums">
+                                {c.vehicle && <span className="mr-1 font-normal">{VEHICLE_ICON[c.vehicle]}</span>}
+                                {money(c.fee)}
+                              </span>
                             ))}
                         </span>
 

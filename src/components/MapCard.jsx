@@ -12,6 +12,7 @@ import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/comp
 import { config } from '../config';
 import { zoneBounds, zoneLabelPosition } from '../lib/geo';
 import { isAvailable, zoneHandler } from '@/lib/availability';
+import { useSettings } from '@/lib/settings';
 import ZoneDrawer from './ZoneDrawer';
 import TechnicianMarker from './TechnicianMarker';
 import ViewAllFilter from './ViewAllFilter';
@@ -69,6 +70,7 @@ export default function MapCard({
   onEditZone, // (id | null)
 }) {
   const { t, lang } = useLanguage();
+  const { office } = useSettings();
   const [openTechId, setOpenTechId] = useState(null);
 
   const techById = useMemo(() => Object.fromEntries(technicians.map((x) => [x.id, x])), [technicians]);
@@ -148,7 +150,7 @@ export default function MapCard({
       {/* The map ("isolate" keeps map layers under the page header) */}
       <div className={`relative isolate h-[calc(100svh-190px)] min-h-[420px] ${editing ? 'ring-2 ring-amber-400 ring-inset' : ''}`}>
         <MapContainer
-          center={[config.office.lat, config.office.lng]}
+          center={[office.lat, office.lng]}
           zoom={config.defaultZoom}
           className="h-full w-full"
         >
@@ -183,7 +185,7 @@ export default function MapCard({
           ))}
 
           {/* Aqualife office */}
-          <Marker position={[config.office.lat, config.office.lng]} icon={officeIcon} title={config.office.name} interactive={false} />
+          <Marker position={[office.lat, office.lng]} icon={officeIcon} title={office.name} interactive={false} />
 
           {/* Technicians */}
           {visibleTechnicians

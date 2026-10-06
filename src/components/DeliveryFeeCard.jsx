@@ -1,30 +1,35 @@
-// "Delivery Fees" card: the price table from src/config.js.
-// The band of the customer being checked is highlighted.
+// "Delivery Fees" card: the price table for each vehicle (Moto / Car).
+// Prices come from Settings > Delivery (super admin). The band of the
+// customer being checked is highlighted.
+import { useState } from "react"
 import { Truck } from "lucide-react"
 import { useLanguage } from "@/i18n"
 import { config } from "@/config"
 import { cn } from "@/lib/utils"
+import { useSettings, VEHICLES } from "@/lib/settings"
+import { deliveryFee, feeRows } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// Build table rows: [{ fromKm, toKm, fee }] from the config.
-function feeRows() {
-  let fromKm = 0
-  return config.deliveryFees.map((row) => {
-    const r = { fromKm, toKm: row.upToKm, fee: row.fee }
-    fromKm = row.upToKm + 1
-    return r
-  })
-}
+export const VEHICLE_ICON = { moto: "🛵", car: "🚗" }
 
-export default function DeliveryFeeCard({ activeFee }) {
+// km = driving distance of the customer being checked (or null)
+export default function DeliveryFeeCard({ km }) {
   const { t } = useLanguage()
-  const rows = feeRows()
-  const last = rows[rows.length - 1]
-  const { everyKm, fee: extraFee } = config.beyondLastRow
+  const { delivery } = useSettings()
+  const enabled = VEHICLES.filter((v) => delivery.vehicles[v]?.enabled)
+  const [picked, setPicked] = useState(enabled[0] || "moto")
+  const vehicle = enabled.includes(picked) ? picked : enabled[0]
   const money = (n) => `${config.currencySymbol}${n}`
-  // Is the checked customer farther than the last row?
+
+  if (!vehicle) return null
+  const pricing = delivery.vehicles[vehicle]
+  const rows = feeRows(pricing)
+  const last = rows[rows.length - 1]
+  const { everyKm, fee: extraFee } = pricing.beyond
+  const activeFee = km != null ? deliveryFee(km, pricing) : null
   const beyond = activeFee && activeFee.toKm > last.toKm
 
   return (
@@ -36,7 +41,20 @@ export default function DeliveryFeeCard({ activeFee }) {
           <Truck className="size-5 text-muted-foreground" />
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        {/* Moto / Car switch (only when both are offered) */}
+        {enabled.length > 1 && (
+          <Tabs value={vehicle} onValueChange={setPicked}>
+            <TabsList className="w-full">
+              {enabled.map((v) => (
+                <TabsTrigger key={v} value={v} className="flex-1">
+                  {VEHICLE_ICON[v]} {t(`vehicle_${v}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -75,7 +93,7 @@ export default function DeliveryFeeCard({ activeFee }) {
           </TableBody>
         </Table>
         {beyond && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {activeFee.fromKm}–{activeFee.toKm} km → <span className="font-medium text-foreground">{money(activeFee.fee)}</span>
           </p>
         )}

@@ -8,7 +8,7 @@ import { config } from "@/config"
 import { isSupabaseConfigured, supabase } from "@/lib/supabase"
 import { useMapData } from "@/hooks/useMapData"
 import { useDrivingRoute } from "@/hooks/useDrivingRoute"
-import { deliveryFee } from "@/lib/pricing"
+import { useSettings } from "@/lib/settings"
 import { reverseGeocode } from "@/lib/geocode"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,8 @@ export default function FieldView({ role, onExit }) {
   const { t, lang } = useLanguage()
   const { technicians, zones, loading } = useMapData()
   const [point, setPoint] = useState(null)
-  const route = useDrivingRoute(point)
+  const { office } = useSettings()
+  const route = useDrivingRoute(point, office)
 
   // GPS position: show it right away, then fill in the street address.
   const useMyLocation = (p) => {
@@ -73,7 +74,7 @@ export default function FieldView({ role, onExit }) {
               zones={zones}
               technicians={technicians}
             />
-            <DeliveryFeeCard activeFee={route?.status === "done" ? deliveryFee(route.km) : null} />
+            <DeliveryFeeCard km={route?.status === "done" ? route.km : null} />
           </>
         )}
       </main>

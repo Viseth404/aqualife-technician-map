@@ -17,12 +17,12 @@ function toLabel(p) {
 }
 
 // Search addresses near the office. Returns [{ lat, lng, label }].
-export async function searchAddress(query, lang, signal) {
+export async function searchAddress(query, lang, signal, office = config.office) {
   const params = new URLSearchParams({
     q: query,
     limit: '6',
-    lat: String(config.office.lat),
-    lon: String(config.office.lng),
+    lat: String(office.lat),
+    lon: String(office.lng),
     bbox: CAMBODIA_BBOX,
   });
   if (lang === 'en') params.set('lang', 'en'); // otherwise local (Khmer) names

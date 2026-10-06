@@ -59,6 +59,7 @@ const customerFromRow = (r) => ({
   technicianName: r.technician_name ?? '',
   distanceKm: r.distance_km,
   fee: r.fee === null ? null : Number(r.fee),
+  vehicle: r.vehicle ?? null, // 'moto' | 'car' (after migration 006)
   createdAt: r.created_at,
 });
 const customerToRow = (c) => ({
@@ -75,6 +76,8 @@ const customerToRow = (c) => ({
   technician_name: c.technicianName || null,
   distance_km: c.distanceKm ?? null,
   fee: c.fee ?? null,
+  // Only send when set, so saving still works before migration 006 is run.
+  ...(c.vehicle && { vehicle: c.vehicle }),
 });
 
 // "Failed to fetch" (Chrome), "Load failed" (Safari), "NetworkError" (Firefox):

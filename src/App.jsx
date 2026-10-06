@@ -1,7 +1,7 @@
 // Main page: header, the map card (left), and side panels (right).
 // Holds the shared state: filter, draw mode, selected zone, customer point.
 import { useEffect, useMemo, useState } from 'react';
-import { CircleAlert, Info, LogOut, PanelRight, Smartphone, X } from 'lucide-react';
+import { CircleAlert, Info, LogOut, PanelRight, Settings, Smartphone, X } from 'lucide-react';
 import { useLanguage, LanguageSwitch } from './i18n';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -19,7 +19,8 @@ import CustomerCheck from './components/CustomerCheck';
 import TechnicianManager from './components/TechnicianManager';
 import DeliveryFeeCard from './components/DeliveryFeeCard';
 import SavedCustomers from './components/SavedCustomers';
-import { deliveryFee } from './lib/pricing';
+import { SettingsProvider, useSettings } from './lib/settings';
+import SettingsSheet from './components/SettingsSheet';
 import Login from './components/Login';
 import FieldView from './components/FieldView';
 
@@ -38,7 +39,7 @@ export default function App() {
 
   // Which role does this account have? (supabase/migrations/005_staff_roles.sql)
   // undefined = checking, null = no access, 'admin' | 'sales' | 'technician'
-  const [role, setRole] = useState(isSupabaseConfigured ? undefined : 'admin');
+  const [role, setRole] = useState(isSupabaseConfigured ? undefined : 'superadmin'); // demo mode: full access
   const userId = session?.user?.id;
   useEffect(() => {
     if (!isSupabaseConfigured || !userId) return;
@@ -64,10 +65,19 @@ export default function App() {
   if (session === null) return <Login />;
   if (role === undefined) return <CenteredMessage text={t('loading')} />;
   if (role === null) return <NotAdmin email={session.user?.email} />;
-  if (role !== 'admin') return <FieldView role={role} />;
-  if (fieldPreview) return <FieldView role="admin" onExit={() => setFieldPreview(false)} />;
-
-  return <Dashboard onFieldView={() => setFieldPreview(true)} />;
+  // Settings (prices, office) are shared by every screen.
+  const isAdminLike = role === 'admin' || role === 'superadmin';
+  return (
+    <SettingsProvider>
+      {!isAdminLike ? (
+        <FieldView role={role} />
+      ) : fieldPreview ? (
+        <FieldView role={role} onExit={() => setFieldPreview(false)} />
+      ) : (
+        <Dashboard role={role} onFieldView={() => setFieldPreview(true)} />
+      )}
+    </SettingsProvider>
+  );
 }
 
 // Shown to a logged-in account that is not on the admin list.
@@ -91,7 +101,8 @@ function NotAdmin({ email }) {
   );
 }
 
-function Dashboard({ onFieldView }) {
+function Dashboard({ role, onFieldView }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { t, lang } = useLanguage();
   const data = useMapData();
   const { technicians, zones, customers } = data;
@@ -127,7 +138,8 @@ function Dashboard({ onFieldView }) {
       setEditingZoneId(null); // lock the zone being edited too
     }
   };
-  const route = useDrivingRoute(customerPoint); // driving route office -> customer
+  const { office } = useSettings();
+  const route = useDrivingRoute(customerPoint, office); // driving route office -> customer
 
   // ---------- "View All" filter ----------
   const visibleZones = useMemo(
@@ -204,7 +216,7 @@ function Dashboard({ onFieldView }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   // Wide screens get a third column on the left for the Delivery Fees card.
   const isWide = useMediaQuery('(min-width: 1280px)');
-  const feeCard = <DeliveryFeeCard activeFee={route?.status === 'done' ? deliveryFee(route.km) : null} />;
+  const feeCard = <DeliveryFeeCard km={route?.status === 'done' ? route.km : null} />;
   const customersCard = (
     <SavedCustomers
       customers={visibleCustomers}
@@ -292,6 +304,12 @@ function Dashboard({ onFieldView }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
+            {/* Super admin: team, prices, office */}
+            {role === 'superadmin' && (
+              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} title={t('settings')}>
+                <Settings /> <span className="hidden sm:inline">{t('settings')}</span>
+              </Button>
+            )}
             {/* Preview what sales/technicians see on their phones */}
             <Button variant="outline" size="sm" onClick={onFieldView} title={t('fieldView')}>
               <Smartphone /> <span className="hidden sm:inline">{t('fieldView')}</span>
@@ -382,6 +400,7 @@ function Dashboard({ onFieldView }) {
           </div>
         )}
       </main>
+      {role === 'superadmin' && <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />}
     </div>
   );
 }
