@@ -1,0 +1,149 @@
+# Aqualife – Technician Location Map
+
+Admin dashboard for Aqualife (Phnom Penh): technician pins, service zones drawn on the map, zone assignment (main + backup), customer coverage check with delivery fee, English / Khmer.
+
+**Stack:** React + Vite, Tailwind CSS v4, Leaflet + react-leaflet, Leaflet-Geoman (drawing), Turf.js, Supabase.
+
+**Free map services – no Google account, API key, or credit card needed:**
+| What | Service |
+|---|---|
+| Map tiles | OpenStreetMap |
+| Address search | Photon (komoot) |
+| Driving distance | OSRM public server |
+
+These public servers are free for light use (a few admins is fine). If Aqualife grows a lot, change the URLs in `src/config.js` to a paid provider or your own servers.
+
+> **Why Supabase and not Firestore?** Firestore cannot store arrays inside arrays, and GeoJSON polygons are exactly that (`[[[lng, lat], …]]`). Supabase saves GeoJSON as-is in a `jsonb` column, has live updates (Realtime), and has admin login built in.
+
+---
+
+## Folder structure
+
+```
+Aqualife Map/
+├── .env.example            ← copy to .env and add your Supabase keys
+├── index.html
+├── netlify.toml            ← Netlify build settings
+├── package.json
+├── vite.config.js
+├── public/favicon.svg
+├── supabase/
+│   └── schema.sql          ← run once in Supabase SQL Editor
+└── src/
+    ├── main.jsx            ← app entry
+    ├── App.jsx             ← login check, page layout, shared state
+    ├── index.css           ← Tailwind + small map style fixes
+    ├── config.js           ← ⭐ office location, free km, price, brand color
+    ├── i18n.jsx            ← English + Khmer text and language switch
+    ├── hooks/
+    │   └── useMapData.js   ← load/save technicians & zones (Supabase or demo mode)
+    ├── lib/
+    │   ├── supabase.js     ← Supabase client
+    │   ├── leaflet.js      ← loads Leaflet + Geoman in the right order
+    │   ├── leaflet-global.js
+    │   ├── geo.js          ← Turf: area, inside-zone check, label position
+    │   ├── geocode.js      ← Photon address search + reverse lookup
+    │   ├── routes.js       ← OSRM driving distance + route line
+    │   └── pricing.js      ← delivery fee rule
+    └── components/
+        ├── MapCard.jsx           ← white card + map + everything on it
+        ├── TechnicianMarker.jsx  ← teardrop photo pin + popup with Call button
+        ├── ZoneDrawer.jsx        ← Geoman: draw / edit polygons, pick point
+        ├── ZoneAssignPanel.jsx   ← rename, main + backup technician, delete
+        ├── ServiceAreaList.jsx   ← "Service Areas" list with km²
+        ├── CustomerCheck.jsx     ← address search / map click → zone, distance, fee
+        ├── ViewAllFilter.jsx     ← bottom-left "View All" dropdown
+        ├── TechnicianManager.jsx ← add / edit / delete technicians
+        └── Login.jsx             ← admin sign in
+```
+
+---
+
+## 1. Supabase setup (shared data for all admins)
+
+1. Create a free project at <https://supabase.com>.
+2. **SQL Editor → New query** → paste all of `supabase/schema.sql` → **Run**. This creates the tables, security rules, live updates, and your 4 starting technicians.
+3. **Authentication → Users → Add user** → create a login (email + password) for each admin.
+4. **Authentication → Sign In / Providers** → turn **off** "Allow new users to sign up", so only the admins you add can log in.
+5. **Project Settings → API** → copy the **Project URL** and the **anon public** key.
+
+> Skipping Supabase? The app runs in **demo mode** – data is saved only in your browser. Good for trying it out.
+
+## 2. Run locally
+
+Needs **Node.js 20.19+ or 22.12+** (<https://nodejs.org>).
+
+```bash
+cd "Aqualife Map"
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>. It works right away in **demo mode**.
+
+To share data with all admins, add Supabase:
+```bash
+cp .env.example .env      # then open .env and paste your Supabase keys
+```
+```
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+```
+Restart `npm run dev` after changing `.env`.
+
+## 3. Settings to change (`src/config.js`)
+
+- `office.lat / office.lng` – **put your real Aqualife office here** (Google Maps → right-click your office → click the numbers to copy).
+- `deliveryFees` – price by driving distance: 0–20 km free, 21–25 km $5, 26–30 km $10, 31–35 km $15, 36–40 km $20.
+- `beyondLastRow` – over 40 km: +$5 for every extra 5 km (43 km → $25).
+- `brandColor`, `colorPresets`, `starterTechnicians`.
+- `tileUrl`, `geocoderUrl`, `routingUrl` – the free map services (swap if you outgrow them).
+
+## 4. Deploy free (Netlify)
+
+First put the code on GitHub:
+```bash
+git init && git add . && git commit -m "Aqualife technician map"
+# create an empty repo on github.com, then:
+git remote add origin https://github.com/<you>/aqulife-map.git
+git push -u origin main
+```
+(`.env` is in `.gitignore` – your keys are **not** uploaded. You add them in the hosting dashboard instead.)
+
+**Netlify (recommended – the free plan allows business use)**
+1. <https://app.netlify.com> → *Add new site → Import from Git* → pick the repo (build settings come from `netlify.toml`).
+2. *Site configuration → Environment variables* → add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+3. *Deploy*. You get `https://<name>.netlify.app`.
+
+> Vercel also works, but its free "Hobby" plan is for personal, non-commercial use only; a business needs Vercel Pro.
+
+If you change env variables later, redeploy – Vite puts them in the build.
+
+---
+
+## Security checklist
+
+1. **Turn off public sign-up:** Supabase → Authentication → Sign In / Providers → switch off **Allow new users to sign up**.
+2. **Admins only:** run `supabase/migrations/004_admin_allowlist.sql`. Only accounts in `public.admins` can read or change data; anyone else sees an "not an admin" screen.
+3. **Add a new admin:** Authentication → Users → Add user (tick Auto Confirm), then in SQL Editor:
+   `insert into public.admins (user_id, email) select id, email from auth.users where email = 'new@example.com';`
+4. **Remove an admin:** `delete from public.admins where email = 'old@example.com';` (and delete the user in Authentication → Users).
+5. **Use HTTPS for daily use** (deploy to Vercel/Netlify). The Wi-Fi address `http://192.168…` is fine for testing in the office only.
+6. Never put the Supabase **service_role** key in `.env` or the app – only the **anon** key.
+
+---
+
+## How to use
+
+| Task | How |
+|---|---|
+| Add all 14 Phnom Penh districts | **Service Areas → Add Phnom Penh districts** (real khan boundaries from OpenStreetMap; skips names you already have) |
+| Draw a zone | **Draw zone** → click points around the area → click the first point (or Enter). Esc cancels |
+| Assign technician | After drawing, the panel opens: name it, pick main + backup → **Save** |
+| Reassign / rename / delete | Click the zone (or its label, or it in Service Areas) |
+| Reshape | Select the zone → drag the corners; drag a small middle dot to add a corner; right-click a corner to remove it |
+| Move technician pins | **Move pins** → drag → **Lock pins** |
+| Show one technician | Bottom-left **View All** dropdown |
+| Check a customer | Type an address in Customer Check, or **Pick on map** then click the map |
+
+**Ideas for later:** live GPS from technicians' phones (update `lat`/`lng` from a small mobile page), photo upload with Supabase Storage.

@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules
+dist
+
+# Secrets: never commit real keys (.env.example is the template)
+.env
+.env.*
+!.env.example
+*.local
+
+# Tools / OS
+.DS_Store
+.vercel
+.netlify
+.claude
+.vscode
+.idea
+*.log
+
+# Original image files not used by the app (kept on your computer only)
+public/icon.png
+public/464181173_*.jpg
