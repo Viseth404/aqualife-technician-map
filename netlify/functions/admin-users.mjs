@@ -135,6 +135,18 @@ export default async (req) => {
         return json(200, { ok: true });
       }
 
+      // ---- Change the login email (allowed for your own account too) ----
+      case 'changeEmail': {
+        if (!UUID.test(body.userId || '')) return json(400, { error: 'Invalid user' });
+        const email = String(body.email || '').trim().toLowerCase();
+        if (!EMAIL.test(email)) return json(400, { error: 'Enter a valid email' });
+        // email_confirm: use the new address right away (no confirmation email).
+        const { error } = await db.auth.admin.updateUserById(body.userId, { email, email_confirm: true });
+        if (error) return json(400, { error: error.message });
+        await db.from('staff').update({ email }).eq('user_id', body.userId); // keep the staff list readable
+        return json(200, { ok: true });
+      }
+
       // ---- Delete the account completely ----
       case 'delete': {
         const problem = checkTarget(body.userId);

@@ -1,7 +1,7 @@
 // Settings for SUPER ADMINS: Team (staff accounts), Delivery (prices per vehicle), Office.
 // Opens as a centered pop-up (Dialog) from the dashboard header.
 import { useCallback, useEffect, useState } from "react"
-import { Check, Eye, EyeOff, KeyRound, Loader2, Plus, RefreshCw, RotateCcw, Shuffle, Trash2, UserPlus, UserX } from "lucide-react"
+import { Check, Eye, EyeOff, KeyRound, Loader2, Mail, Plus, RefreshCw, RotateCcw, Shuffle, Trash2, UserPlus, UserX } from "lucide-react"
 import { useLanguage } from "@/i18n"
 import { config } from "@/config"
 import { isSupabaseConfigured } from "@/lib/supabase"
@@ -185,6 +185,13 @@ function TeamSettings() {
                         </SelectContent>
                       </Select>
 
+                      {/* Change login email (also for your own account) */}
+                      <ChangeEmailButton
+                        email={u.email}
+                        disabled={busy}
+                        onChange={(email) => run(u.id, "changeEmail", { userId: u.id, email }, `${t("emailChanged")}: ${email}`)}
+                      />
+
                       <ResetPasswordButton email={u.email} disabled={busy} onReset={(password) => run(u.id, "resetPassword", { userId: u.id, password }, `${t("passwordChanged")}: ${u.email}`)} />
 
                       {u.role && (
@@ -283,6 +290,32 @@ function AddStaffCard({ onCreate }) {
         </form>
       </CardContent>
     </Card>
+  )
+}
+
+function ChangeEmailButton({ email, onChange, disabled }) {
+  const { t } = useLanguage()
+  const [value, setValue] = useState(email)
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) && value.trim().toLowerCase() !== (email || "").toLowerCase()
+  return (
+    <AlertDialog onOpenChange={(o) => o && setValue(email)}>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon-sm" disabled={disabled} title={t("changeEmail")} aria-label={t("changeEmail")}>
+          <Mail />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("changeEmail")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("changeEmailDesc")}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input type="email" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogAction disabled={!valid} onClick={() => onChange(value.trim().toLowerCase())}>{t("save")}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
