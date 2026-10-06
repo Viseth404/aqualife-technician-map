@@ -1,5 +1,5 @@
 // Settings for SUPER ADMINS: Team (staff accounts), Delivery (prices per vehicle), Office.
-// Opens as a Sheet from the dashboard header.
+// Opens as a centered pop-up (Dialog) from the dashboard header.
 import { useCallback, useEffect, useState } from "react"
 import { Check, Eye, EyeOff, KeyRound, Loader2, Plus, RefreshCw, RotateCcw, Shuffle, Trash2, UserPlus, UserX } from "lucide-react"
 import { useLanguage } from "@/i18n"
@@ -16,7 +16,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -37,28 +37,29 @@ const ROLES = ["superadmin", "admin", "sales", "technician"]
 export default function SettingsSheet({ open, onOpenChange }) {
   const { t } = useLanguage()
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 sm:max-w-2xl">
-        <SheetHeader className="border-b">
-          <SheetTitle>{t("settings")}</SheetTitle>
-          <SheetDescription>{t("settingsDesc")}</SheetDescription>
-        </SheetHeader>
-        <Tabs defaultValue="team" className="flex-1 overflow-hidden">
-          <div className="px-4 pt-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Centered pop-up; on phones it fills most of the screen. */}
+      <DialogContent className="flex h-[90svh] max-h-[780px] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="border-b p-4 pr-12">
+          <DialogTitle className="text-base">{t("settings")}</DialogTitle>
+          <DialogDescription>{t("settingsDesc")}</DialogDescription>
+        </DialogHeader>
+        <Tabs defaultValue="team" className="flex min-h-0 flex-1 flex-col gap-0">
+          <div className="border-b px-4 py-3">
             <TabsList className="w-full">
               <TabsTrigger value="team" className="flex-1">{t("team")}</TabsTrigger>
               <TabsTrigger value="delivery" className="flex-1">{t("delivery")}</TabsTrigger>
               <TabsTrigger value="office" className="flex-1">{t("office")}</TabsTrigger>
             </TabsList>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-muted/30 p-4">
             <TabsContent value="team"><TeamSettings /></TabsContent>
             <TabsContent value="delivery"><DeliverySettings /></TabsContent>
             <TabsContent value="office"><OfficeSettings /></TabsContent>
           </div>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
 
