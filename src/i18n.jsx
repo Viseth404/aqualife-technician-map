@@ -440,7 +440,7 @@ const text = {
     forgotHint:
       "សូមស្នើម្ចាស់ Aqualife ឱ្យកំណត់ឡើងវិញក្នុង Supabase (Authentication > Users)។",
     wrongLogin: "អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",
-    adminOnly: "មានតែអ្នកគ្រប់គ្រង Aqualife ទេដែលអាចចូលបាន។",
+    adminOnly: "មានតែក្រុមការងារ Aqualife ទេដែលអាចចូលបាន។",
     email: "អ៊ីមែល",
     password: "ពាក្យសម្ងាត់",
     signIn: "ចូល",
