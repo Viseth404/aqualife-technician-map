@@ -120,6 +120,18 @@ If you change env variables later, redeploy – Vite puts them in the build.
 
 ---
 
+## How distance and price are calculated
+
+- **Route:** [Valhalla](https://valhalla.github.io/valhalla/) on the free OpenStreetMap server run by FOSSGIS
+  (`config.valhallaUrl`). It knows vehicle types:
+  - **Moto** (`motor_scooter`): may use smaller streets and shortcuts, scooter speeds.
+  - **Car** (`auto`): only roads cars may use (one-ways, turn rules, wide enough streets), car speeds.
+- **Which one:** the super admin chooses in **Settings → Delivery → Calculate delivery by**. That vehicle's
+  route **and** price table are used everywhere. Admins, sales and technicians never see moto/car –
+  just one distance, time and fee.
+- **Backup:** if Valhalla doesn't answer, the OSRM car route is used so a price still shows.
+- Distance is measured from the office (Settings → Office) along roads, not in a straight line.
+
 ## Security checklist & staff roles
 
 1. **Turn off public sign-up:** Supabase → Authentication → Sign In / Providers → switch off **Allow new users to sign up**.

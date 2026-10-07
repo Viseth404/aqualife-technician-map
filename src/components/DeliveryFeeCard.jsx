@@ -1,31 +1,25 @@
-// "Delivery Fees" card: the price table for each vehicle (Moto / Car).
-// Prices come from Settings > Delivery (super admin). The band of the
-// customer being checked is highlighted.
-import { useState } from "react"
+// "Delivery Fees" card: the price table for the delivery vehicle the super admin
+// chose in Settings > Delivery (the vehicle itself is never shown here).
+// The band of the customer being checked is highlighted.
 import { Truck } from "lucide-react"
 import { useLanguage } from "@/i18n"
 import { config } from "@/config"
 import { cn } from "@/lib/utils"
-import { useSettings, VEHICLES } from "@/lib/settings"
+import { activePricing, useSettings } from "@/lib/settings"
 import { deliveryFee, feeRows } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+// Used only in Settings (super admin).
 export const VEHICLE_ICON = { moto: "🛵", car: "🚗" }
 
 // km = driving distance of the customer being checked (or null)
 export default function DeliveryFeeCard({ km }) {
   const { t } = useLanguage()
   const { delivery } = useSettings()
-  const enabled = VEHICLES.filter((v) => delivery.vehicles[v]?.enabled)
-  const [picked, setPicked] = useState(enabled[0] || "moto")
-  const vehicle = enabled.includes(picked) ? picked : enabled[0]
   const money = (n) => `${config.currencySymbol}${n}`
-
-  if (!vehicle) return null
-  const pricing = delivery.vehicles[vehicle]
+  const pricing = activePricing(delivery)
   const rows = feeRows(pricing)
   const last = rows[rows.length - 1]
   const { everyKm, fee: extraFee } = pricing.beyond
@@ -42,19 +36,6 @@ export default function DeliveryFeeCard({ km }) {
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Moto / Car switch (only when both are offered) */}
-        {enabled.length > 1 && (
-          <Tabs value={vehicle} onValueChange={setPicked}>
-            <TabsList className="w-full">
-              {enabled.map((v) => (
-                <TabsTrigger key={v} value={v} className="flex-1">
-                  {VEHICLE_ICON[v]} {t(`vehicle_${v}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-
         <Table>
           <TableHeader>
             <TableRow>

@@ -9,9 +9,7 @@ import { newId } from '@/lib/uuid';
 import { zonesAtPoint, fmt } from '@/lib/geo';
 import { parseMapsLink, searchAddress } from '@/lib/geocode';
 import { deliveryFee } from '@/lib/pricing';
-import { useSettings, VEHICLES } from '@/lib/settings';
-import { VEHICLE_ICON } from './DeliveryFeeCard';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { activePricing, activeVehicle, useSettings } from '@/lib/settings';
 import { isAvailable, zoneHandler } from '@/lib/availability';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -90,10 +88,9 @@ export default function CustomerCheck({
   // ---------- Which zone / technician ----------
   const techById = Object.fromEntries(technicians.map((x) => [x.id, x]));
   const hits = point ? zonesAtPoint(zones, point) : [];
-  // Price for each vehicle we offer (Settings > Delivery).
+  // One delivery fee, from the price table of the vehicle the super admin chose (Settings > Delivery).
   const { delivery, office } = useSettings();
-  const vehicles = VEHICLES.filter((v) => delivery.vehicles[v]?.enabled);
-  const fees = route?.status === 'done' ? Object.fromEntries(vehicles.map((v) => [v, deliveryFee(route.km, delivery.vehicles[v])])) : null;
+  const fee = route?.status === 'done' ? deliveryFee(route.km, activePricing(delivery)) : null;
   // The zone that has a main technician (only then can the customer be saved).
   // Zone with a technician working today (main, or backup if main is off).
   // If everyone in the zone is off, fall back to the main technician so the customer can still be saved.
@@ -257,26 +254,21 @@ export default function CustomerCheck({
                   </span>
                 </Row>
                 <Separator className="my-2" />
-                {vehicles.map((v) => {
-                  const f = fees[v];
-                  return (
-                    <Row key={v} label={`${VEHICLE_ICON[v]} ${t(`vehicle_${v}`)}`}>
-                      {f.free ? (
-                        <Badge className="bg-green-600 text-white hover:bg-green-600">{t('free')} ✅</Badge>
-                      ) : (
-                        <span className="inline-flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {f.fromKm}–{f.toKm} km
-                          </span>
-                          <Badge className="bg-amber-500 text-white tabular-nums hover:bg-amber-500">
-                            {config.currencySymbol}
-                            {Number.isInteger(f.fee) ? f.fee : fmt(f.fee)}
-                          </Badge>
-                        </span>
-                      )}
-                    </Row>
-                  );
-                })}
+                <Row label={t('deliveryFee')}>
+                  {fee.free ? (
+                    <Badge className="bg-green-600 text-white hover:bg-green-600">{t('freeDelivery')}</Badge>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {fee.fromKm}–{fee.toKm} km
+                      </span>
+                      <Badge className="bg-amber-500 text-white tabular-nums hover:bg-amber-500">
+                        {config.currencySymbol}
+                        {Number.isInteger(fee.fee) ? fee.fee : fmt(fee.fee)}
+                      </Badge>
+                    </span>
+                  )}
+                </Row>
               </div>
             )}
 
@@ -284,7 +276,6 @@ export default function CustomerCheck({
               <SaveCustomerForm
                 key={`${point.lat},${point.lng}`}
                 busy={route?.status === 'loading'}
-                vehicles={vehicles}
                 onSave={(form) =>
                   onSaveCustomer({
                     id: newId(),
@@ -297,7 +288,8 @@ export default function CustomerCheck({
                     technicianId: assignedTech.id,
                     technicianName: assignedTech.name,
                     distanceKm: route?.status === 'done' ? Math.round(route.km * 10) / 10 : null,
-                    fee: fees && form.vehicle ? fees[form.vehicle].fee : null,
+                    fee: fee ? fee.fee : null,
+                    vehicle: activeVehicle(delivery), // stored for the record, never shown
                   })
                 }
               />
@@ -311,13 +303,13 @@ export default function CustomerCheck({
 
 // "Save customer" button that opens a small name / phone / note form.
 // Only shown when the location has an assigned technician.
-function SaveCustomerForm({ onSave, busy, vehicles }) {
+function SaveCustomerForm({ onSave, busy }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', note: '', vehicle: vehicles[0] || null });
+  const [form, setForm] = useState({ name: '', phone: '', note: '' });
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   if (saved) {
@@ -343,7 +335,7 @@ function SaveCustomerForm({ onSave, busy, vehicles }) {
         if (!form.name.trim() || saving) return;
         setSaving(true);
         setFailed(false);
-        const ok = await onSave({ name: form.name.trim(), phone: form.phone.trim(), note: form.note.trim(), vehicle: form.vehicle });
+        const ok = await onSave({ name: form.name.trim(), phone: form.phone.trim(), note: form.note.trim() });
         setSaving(false);
         if (ok) setSaved(true);
         else setFailed(true); // the exact error is shown at the top of the page
@@ -358,20 +350,6 @@ function SaveCustomerForm({ onSave, busy, vehicles }) {
           <FieldLabel htmlFor="cust-phone">{t('phone')}</FieldLabel>
           <Input id="cust-phone" type="tel" placeholder="012 345 678" value={form.phone} onChange={set('phone')} />
         </Field>
-        {vehicles.length > 1 && (
-          <Field>
-            <FieldLabel>{t('vehicle')}</FieldLabel>
-            <Tabs value={form.vehicle} onValueChange={(v) => setForm({ ...form, vehicle: v })}>
-              <TabsList className="w-full">
-                {vehicles.map((v) => (
-                  <TabsTrigger key={v} value={v} className="flex-1">
-                    {VEHICLE_ICON[v]} {t(`vehicle_${v}`)}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </Field>
-        )}
         <Field>
           <FieldLabel htmlFor="cust-note">{t('note')}</FieldLabel>
           <Input id="cust-note" value={form.note} onChange={set('note')} placeholder={t('notePlaceholder')} />

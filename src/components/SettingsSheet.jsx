@@ -5,7 +5,7 @@ import { Check, Eye, EyeOff, KeyRound, Loader2, Mail, Plus, RefreshCw, RotateCcw
 import { useLanguage } from "@/i18n"
 import { config } from "@/config"
 import { isSupabaseConfigured } from "@/lib/supabase"
-import { useSettings, VEHICLES } from "@/lib/settings"
+import { activeVehicle, useSettings, VEHICLES } from "@/lib/settings"
 import { adminApi, generatePassword } from "@/lib/adminApi"
 import { parseMapsLink } from "@/lib/geocode"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -381,17 +380,17 @@ function checkPricing(p, t) {
 function DeliverySettings() {
   const { t } = useLanguage()
   const { delivery, saveSetting } = useSettings()
-  const [draft, setDraft] = useState(delivery)
+  const withVehicle = (d) => ({ ...d, vehicle: activeVehicle(d) })
+  const [draft, setDraft] = useState(() => withVehicle(delivery))
   const [status, setStatus] = useState(null)
   const [busy, setBusy] = useState(false)
-  useEffect(() => setDraft(delivery), [delivery])
+  useEffect(() => setDraft(withVehicle(delivery)), [delivery])
 
   const setVehicle = (v, patch) => setDraft((d) => ({ ...d, vehicles: { ...d.vehicles, [v]: { ...d.vehicles[v], ...patch } } }))
   const num = (s) => (s === "" ? NaN : Number(s))
 
   const save = async () => {
     setStatus(null)
-    if (!VEHICLES.some((v) => draft.vehicles[v]?.enabled)) return setStatus({ ok: false, text: t("errNoVehicle") })
     for (const v of VEHICLES) {
       const err = checkPricing(draft.vehicles[v], t)
       if (err) return setStatus({ ok: false, text: `${t(`vehicle_${v}`)}: ${err}` })
@@ -404,16 +403,38 @@ function DeliverySettings() {
 
   return (
     <div className="space-y-4">
+      {/* Which vehicle delivery is calculated by (route + price table). Only super admins see this. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("calcBy")}</CardTitle>
+          <CardDescription>{t("calcByDesc")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Tabs value={draft.vehicle} onValueChange={(vehicle) => setDraft((d) => ({ ...d, vehicle }))}>
+            <TabsList className="w-full">
+              {VEHICLES.map((v) => (
+                <TabsTrigger key={v} value={v} className="flex-1">
+                  {VEHICLE_ICON[v]} {t(`vehicle_${v}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <p className="text-xs text-muted-foreground">{t(`calcBy_${draft.vehicle}`)}</p>
+        </CardContent>
+      </Card>
+
       {VEHICLES.map((v) => {
         const p = draft.vehicles[v]
         return (
-          <Card key={v} className={cn(!p.enabled && "opacity-60")}>
+          <Card key={v} className={cn(draft.vehicle !== v && "opacity-70")}>
             <CardHeader>
               <CardTitle>{VEHICLE_ICON[v]} {t(`vehicle_${v}`)}</CardTitle>
-              <CardDescription>{p.enabled ? t("vehicleOn") : t("vehicleOff")}</CardDescription>
-              <CardAction>
-                <Switch checked={p.enabled} onCheckedChange={(enabled) => setVehicle(v, { enabled })} aria-label={t(`vehicle_${v}`)} />
-              </CardAction>
+              <CardDescription>{draft.vehicle === v ? t("priceInUse") : t("priceNotInUse")}</CardDescription>
+              {draft.vehicle === v && (
+                <CardAction>
+                  <Badge>{t("inUse")}</Badge>
+                </CardAction>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground">

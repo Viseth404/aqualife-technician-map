@@ -19,7 +19,7 @@ import CustomerCheck from './components/CustomerCheck';
 import TechnicianManager from './components/TechnicianManager';
 import DeliveryFeeCard from './components/DeliveryFeeCard';
 import SavedCustomers from './components/SavedCustomers';
-import { SettingsProvider, useSettings } from './lib/settings';
+import { SettingsProvider, activeVehicle, useSettings } from './lib/settings';
 import SettingsSheet from './components/SettingsSheet';
 import Login from './components/Login';
 import FieldView from './components/FieldView';
@@ -139,8 +139,8 @@ function Dashboard({ role, onFieldView }) {
       setEditingZoneId(null); // lock the zone being edited too
     }
   };
-  const { office } = useSettings();
-  const route = useDrivingRoute(customerPoint, office); // driving route office -> customer
+  const { office, delivery } = useSettings();
+  const route = useDrivingRoute(customerPoint, office, activeVehicle(delivery)); // driving route office -> customer
 
   // ---------- "View All" filter ----------
   const visibleZones = useMemo(

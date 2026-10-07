@@ -13,7 +13,7 @@
   [headers.values]
     # Only load code and data from the places this app really uses:
     #   Supabase (database + login + live updates), Photon (address search),
-    #   OSRM (driving distance), OpenStreetMap (map tiles), Google Fonts.
+    #   Valhalla + OSRM backup (driving distance), OpenStreetMap (map tiles), Google Fonts.
     # Technician photos can come from any https link, so img-src allows https:.
     Content-Security-Policy = """
       default-src 'self';
@@ -21,7 +21,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: blob: https:;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io https://router.project-osrm.org https://fonts.googleapis.com https://fonts.gstatic.com https://tile.openstreetmap.org;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://photon.komoot.io https://valhalla1.openstreetmap.de https://router.project-osrm.org https://fonts.googleapis.com https://fonts.gstatic.com https://tile.openstreetmap.org;
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';

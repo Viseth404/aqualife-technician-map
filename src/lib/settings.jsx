@@ -11,12 +11,21 @@ export const VEHICLES = ['moto', 'car'];
 
 export const DEFAULT_SETTINGS = {
   delivery: {
+    vehicle: 'moto', // which vehicle delivery is calculated by (super admin chooses; hidden from others)
     vehicles: Object.fromEntries(
       VEHICLES.map((v) => [v, { enabled: true, rows: config.deliveryFees, beyond: config.beyondLastRow }]),
     ),
   },
   office: { name: config.office.name, lat: config.office.lat, lng: config.office.lng },
 };
+
+// The vehicle delivery is calculated by (route + price table).
+// Older saved settings have no "vehicle": use the first one that was switched on.
+export function activeVehicle(delivery) {
+  if (VEHICLES.includes(delivery?.vehicle)) return delivery.vehicle;
+  return VEHICLES.find((v) => delivery?.vehicles?.[v]?.enabled) || 'moto';
+}
+export const activePricing = (delivery) => delivery.vehicles[activeVehicle(delivery)];
 
 const LOCAL_KEY = 'aqulife-settings';
 const SettingsContext = createContext({ ...DEFAULT_SETTINGS, loading: false, saveSetting: async () => false });
