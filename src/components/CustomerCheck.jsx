@@ -9,9 +9,9 @@ import { newId } from '@/lib/uuid';
 import { zonesAtPoint, fmt } from '@/lib/geo';
 import { parseMapsLink, searchAddress } from '@/lib/geocode';
 import { deliveryFee } from '@/lib/pricing';
-import { activePricing, activeVehicle, useSettings } from '@/lib/settings';
+import { activePricing, activeVehicle, isBlockedProvince, useSettings } from '@/lib/settings';
 import { isAvailable, zoneHandler } from '@/lib/availability';
-import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,9 +87,11 @@ export default function CustomerCheck({
 
   // ---------- Which zone / technician ----------
   const techById = Object.fromEntries(technicians.map((x) => [x.id, x]));
-  const hits = point ? zonesAtPoint(zones, point) : [];
   // One delivery fee, from the price table of the vehicle the super admin chose (Settings > Delivery).
   const { delivery, office } = useSettings();
+  // Provinces are blocked unless the super admin accepts them (Settings > Delivery): no zone, fee, or saving.
+  const outside = Boolean(point) && isBlockedProvince(point, delivery);
+  const hits = point && !outside ? zonesAtPoint(zones, point) : [];
   const fee = route?.status === 'done' ? deliveryFee(route.km, activePricing(delivery)) : null;
   // The zone that has a main technician (only then can the customer be saved).
   // Zone with a technician working today (main, or backup if main is off).
@@ -181,7 +183,13 @@ export default function CustomerCheck({
             <Separator />
             <Row label={t('location')}>{point.label || `${fmt(point.lat, 5)}, ${fmt(point.lng, 5)}`}</Row>
 
-            {hits.length === 0 ? (
+            {outside ? (
+              <Alert variant="destructive">
+                <CircleAlert />
+                <AlertTitle>{t('outsidePhnomPenh')}</AlertTitle>
+                <AlertDescription>{t('provinceNotServed')}</AlertDescription>
+              </Alert>
+            ) : hits.length === 0 ? (
               <Alert variant="destructive">
                 <CircleAlert />
                 <AlertTitle>{t('noTechnician')}</AlertTitle>

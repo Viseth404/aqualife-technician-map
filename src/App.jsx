@@ -19,7 +19,7 @@ import CustomerCheck from './components/CustomerCheck';
 import TechnicianManager from './components/TechnicianManager';
 import DeliveryFeeCard from './components/DeliveryFeeCard';
 import SavedCustomers from './components/SavedCustomers';
-import { SettingsProvider, activeVehicle, useSettings } from './lib/settings';
+import { SettingsProvider, activeVehicle, isBlockedProvince, useSettings } from './lib/settings';
 import SettingsSheet from './components/SettingsSheet';
 import Login from './components/Login';
 import FieldView from './components/FieldView';
@@ -140,7 +140,9 @@ function Dashboard({ role, onFieldView }) {
     }
   };
   const { office, delivery } = useSettings();
-  const route = useDrivingRoute(customerPoint, office, activeVehicle(delivery)); // driving route office -> customer
+  // Driving route office -> customer (none for a blocked province).
+  const routePoint = customerPoint && !isBlockedProvince(customerPoint, delivery) ? customerPoint : null;
+  const route = useDrivingRoute(routePoint, office, activeVehicle(delivery));
 
   // ---------- "View All" filter ----------
   const visibleZones = useMemo(

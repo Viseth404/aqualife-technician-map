@@ -64,6 +64,8 @@ const text = {
     insideZone: "Zone",
     handledBy: "Technician",
     noTechnician: "No technician assigned",
+    outsidePhnomPenh: "Outside Phnom Penh",
+    provinceNotServed: "We only serve Phnom Penh for now. Delivery and service in the provinces are not available.",
     distance: "Driving distance",
     driveTime: "Drive time",
     calculating: "Calculating…",
@@ -78,6 +80,9 @@ const text = {
     offToday: "Off today",
     cover: "Cover",
     calcBy: "Calculate delivery by",
+    acceptProvinces: "Accept provinces",
+    acceptProvincesOff: "Off: only Phnom Penh. A location in a province shows \"Outside Phnom Penh\" – no fee, can't be saved.",
+    acceptProvincesOn: "On: provinces are accepted. The fee uses the price table, even for long distances.",
     calcByDesc:
       "Sets the route and the price table used everywhere. Only super admins see this – everyone else just sees one distance and one fee.",
     calcBy_moto:
@@ -286,6 +291,8 @@ const text = {
     insideZone: "តំបន់",
     handledBy: "អ្នកបច្ចេកទេស",
     noTechnician: "មិនមានអ្នកបច្ចេកទេសទទួលខុសត្រូវ",
+    outsidePhnomPenh: "នៅក្រៅរាជធានីភ្នំពេញ",
+    provinceNotServed: "បច្ចុប្បន្ន យើងផ្តល់សេវាតែក្នុងរាជធានីភ្នំពេញប៉ុណ្ណោះ។ មិនទាន់មានសេវាដឹកជញ្ជូន និងសេវាជួសជុលនៅតាមខេត្តទេ។",
     distance: "ចម្ងាយបើកបរ",
     driveTime: "រយៈពេលបើកបរ",
     calculating: "កំពុងគណនា…",
@@ -300,6 +307,9 @@ const text = {
     offToday: "ឈប់ថ្ងៃនេះ",
     cover: "ជំនួស",
     calcBy: "គណនាការដឹកជញ្ជូនតាម",
+    acceptProvinces: "ទទួលសេវានៅតាមខេត្ត",
+    acceptProvincesOff: "បិទ៖ តែក្នុងរាជធានីភ្នំពេញ។ ទីតាំងនៅតាមខេត្តនឹងបង្ហាញ \"នៅក្រៅរាជធានីភ្នំពេញ\" – គ្មានតម្លៃ និងមិនអាចរក្សាទុកបានទេ។",
+    acceptProvincesOn: "បើក៖ ទទួលសេវានៅតាមខេត្ត។ តម្លៃគិតតាមតារាងតម្លៃ ទោះបីចម្ងាយឆ្ងាយក៏ដោយ។",
     calcByDesc:
       "កំណត់ផ្លូវ និងតារាងតម្លៃដែលប្រើគ្រប់កន្លែង។ មានតែអ្នកគ្រប់គ្រងជាន់ខ្ពស់ទេដែលឃើញ – អ្នកផ្សេងឃើញតែចម្ងាយមួយ និងតម្លៃមួយ។",
     calcBy_moto: "ផ្លូវម៉ូតូ៖ អាចប្រើផ្លូវតូច និងផ្លូវកាត់; ល្បឿនម៉ូតូ។",

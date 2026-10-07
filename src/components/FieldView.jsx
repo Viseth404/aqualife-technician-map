@@ -8,7 +8,7 @@ import { config } from "@/config"
 import { isSupabaseConfigured, supabase } from "@/lib/supabase"
 import { useMapData } from "@/hooks/useMapData"
 import { useDrivingRoute } from "@/hooks/useDrivingRoute"
-import { activeVehicle, useSettings } from "@/lib/settings"
+import { activeVehicle, isBlockedProvince, useSettings } from "@/lib/settings"
 import { reverseGeocode } from "@/lib/geocode"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ export default function FieldView({ role, onExit }) {
   const { technicians, zones, customers, loading } = useMapData()
   const [point, setPoint] = useState(null)
   const { office, delivery } = useSettings()
-  const route = useDrivingRoute(point, office, activeVehicle(delivery))
+  const route = useDrivingRoute(point && !isBlockedProvince(point, delivery) ? point : null, office, activeVehicle(delivery)) // none for provinces
 
   // GPS position or a tap on the map: show it right away, then fill in the street address.
   const useMyLocation = (p) => {

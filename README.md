@@ -131,6 +131,8 @@ If you change env variables later, redeploy – Vite puts them in the build.
   just one distance, time and fee.
 - **Backup:** if Valhalla doesn't answer, the OSRM car route is used so a price still shows.
 - Distance is measured from the office (Settings → Office) along roads, not in a straight line.
+- **Provinces:** by default only Phnom Penh is served. A location outside the 14 khans is blocked –
+  no route, no fee, can't be saved. The super admin can turn on **Settings → Delivery → Accept provinces**.
 
 ## Security checklist & staff roles
 

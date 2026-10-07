@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -421,6 +422,21 @@ function DeliverySettings() {
           </Tabs>
           <p className="text-xs text-muted-foreground">{t(`calcBy_${draft.vehicle}`)}</p>
         </CardContent>
+      </Card>
+
+      {/* Phnom Penh only, or provinces too. Off = locations in a province are blocked in Customer Check. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("acceptProvinces")}</CardTitle>
+          <CardDescription>{draft.acceptProvinces ? t("acceptProvincesOn") : t("acceptProvincesOff")}</CardDescription>
+          <CardAction>
+            <Switch
+              checked={Boolean(draft.acceptProvinces)}
+              onCheckedChange={(acceptProvinces) => setDraft((d) => ({ ...d, acceptProvinces }))}
+              aria-label={t("acceptProvinces")}
+            />
+          </CardAction>
+        </CardHeader>
       </Card>
 
       {VEHICLES.map((v) => {

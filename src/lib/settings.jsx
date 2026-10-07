@@ -1,10 +1,11 @@
 // App settings the super admin can change in the app (Settings page):
-//   delivery – price tables per vehicle (moto, car)
+//   delivery – price tables per vehicle (moto, car), and whether provinces are accepted
 //   office   – office name + location (distances are measured from here)
 // Stored in Supabase table app_settings (migration 006). Values from src/config.js
 // are used until then, and in demo mode (saved in this browser).
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { config } from '../config';
+import { isInPhnomPenh } from './geo';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 export const VEHICLES = ['moto', 'car'];
@@ -12,6 +13,7 @@ export const VEHICLES = ['moto', 'car'];
 export const DEFAULT_SETTINGS = {
   delivery: {
     vehicle: 'moto', // which vehicle delivery is calculated by (super admin chooses; hidden from others)
+    acceptProvinces: false, // false = only Phnom Penh; locations in a province are blocked
     vehicles: Object.fromEntries(
       VEHICLES.map((v) => [v, { enabled: true, rows: config.deliveryFees, beyond: config.beyondLastRow }]),
     ),
@@ -26,6 +28,10 @@ export function activeVehicle(delivery) {
   return VEHICLES.find((v) => delivery?.vehicles?.[v]?.enabled) || 'moto';
 }
 export const activePricing = (delivery) => delivery.vehicles[activeVehicle(delivery)];
+
+// Is this location in a province while the super admin only accepts Phnom Penh?
+// Then Customer Check shows "Outside Phnom Penh": no route, no fee, can't be saved.
+export const isBlockedProvince = (point, delivery) => !delivery?.acceptProvinces && !isInPhnomPenh(point);
 
 const LOCAL_KEY = 'aqulife-settings';
 const SettingsContext = createContext({ ...DEFAULT_SETTINGS, loading: false, saveSetting: async () => false });
