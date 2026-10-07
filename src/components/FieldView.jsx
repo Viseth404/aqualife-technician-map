@@ -1,5 +1,5 @@
 // Phone screen for Sales and Technicians: check a customer's address and see the price.
-// Read-only: no map editing, no saved customers.
+// Read-only: a view-only map (zones, technicians, customer dots), no editing.
 // Admins can open it too ("Field view") to see what their team sees.
 import { useState } from "react"
 import { ArrowLeft, LogOut } from "lucide-react"
@@ -15,15 +15,16 @@ import { Button } from "@/components/ui/button"
 import CustomerCheck from "./CustomerCheck"
 import DeliveryFeeCard from "./DeliveryFeeCard"
 import { InstallButton } from "./PwaPrompts"
+import FieldMap from "./FieldMap"
 
 export default function FieldView({ role, onExit }) {
   const { t, lang } = useLanguage()
-  const { technicians, zones, loading } = useMapData()
+  const { technicians, zones, customers, loading } = useMapData()
   const [point, setPoint] = useState(null)
   const { office } = useSettings()
   const route = useDrivingRoute(point, office)
 
-  // GPS position: show it right away, then fill in the street address.
+  // GPS position or a tap on the map: show it right away, then fill in the street address.
   const useMyLocation = (p) => {
     setPoint(p)
     reverseGeocode(p, lang).then((label) => {
@@ -68,6 +69,14 @@ export default function FieldView({ role, onExit }) {
           <p className="py-10 text-center text-muted-foreground">{t("loading")}</p>
         ) : (
           <>
+            <FieldMap
+              zones={zones}
+              technicians={technicians}
+              customers={customers}
+              point={point}
+              route={route}
+              onPick={useMyLocation}
+            />
             <CustomerCheck
               point={point}
               onPointChange={setPoint}

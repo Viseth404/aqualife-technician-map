@@ -295,3 +295,13 @@ alter table public.customers add column if not exists vehicle text check (vehicl
 
 -- 6. Show the staff list.
 select email, role, added_at from public.staff order by role, email;
+
+-- Staff can read saved customers (same as migrations/007_staff_read_customers.sql) --
+
+drop policy if exists "admins read customers" on public.customers;
+drop policy if exists "staff read customers" on public.customers;
+create policy "staff read customers" on public.customers
+  for select to authenticated using (public.is_staff());
+
+-- (Unchanged: "admins add/edit/delete customers" policies from 005.)
+select 'Staff can now read saved customers' as result;

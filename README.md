@@ -123,7 +123,7 @@ If you change env variables later, redeploy – Vite puts them in the build.
 ## Security checklist & staff roles
 
 1. **Turn off public sign-up:** Supabase → Authentication → Sign In / Providers → switch off **Allow new users to sign up**.
-2. **Run the SQL migrations in order** (SQL Editor): `004_admin_allowlist.sql`, `005_staff_roles.sql`, `006_superadmin_settings.sql`.
+2. **Run the SQL migrations in order** (SQL Editor): `004_admin_allowlist.sql`, `005_staff_roles.sql`, `006_superadmin_settings.sql`, `007_staff_read_customers.sql`.
 3. **Server key for team management:** Netlify → Site configuration → Environment variables → add
    `SUPABASE_SECRET_KEY` = Supabase → Project Settings → API Keys → **Secret key** (mark it *secret*, scope *Functions*), then redeploy.
    This key is only used by `netlify/functions/admin-users.mjs` on Netlify's servers – never put it in `.env` or a `VITE_` variable.
@@ -133,8 +133,8 @@ If you change env variables later, redeploy – Vite puts them in the build.
    |---|---|---|
    | `superadmin` | Full dashboard + **Settings** | Everything, plus staff accounts, delivery prices (moto/car), office location |
    | `admin` | Full dashboard | Map, zones, technicians, customers |
-   | `sales` | Phone screen: Customer Check + Delivery Fees | Nothing |
-   | `technician` | Phone screen: Customer Check + Delivery Fees | Nothing |
+   | `sales` | Phone screen: map (zones, technicians, customer dots) + Customer Check + Delivery Fees | Nothing |
+   | `technician` | Phone screen: map (zones, technicians, customer dots) + Customer Check + Delivery Fees | Nothing |
 
 5. **Manage staff in the app:** Settings → Team (super admin): create accounts, change roles, reset passwords, revoke access, delete.
    You can't remove your own access, and there is always at least one super admin.
@@ -142,10 +142,10 @@ If you change env variables later, redeploy – Vite puts them in the build.
 
 ---|---|---|
    | `admin` | Full dashboard | Everything |
-   | `sales` | Phone screen: Customer Check + Delivery Fees | Nothing |
-   | `technician` | Phone screen: Customer Check + Delivery Fees | Nothing |
+   | `sales` | Phone screen: map (zones, technicians, customer dots) + Customer Check + Delivery Fees | Nothing |
+   | `technician` | Phone screen: map (zones, technicians, customer dots) + Customer Check + Delivery Fees | Nothing |
 
-   Saved customers (names, phones) are admin-only. Admins can preview the phone screen with **Field view**.
+   Saved customers can be seen by all staff on the map (migration 007) but only admins can add, edit, or delete them. Admins can preview the phone screen with **Field view**.
 4. **Add a staff member:** Authentication → Users → Add user (tick Auto Confirm), then in SQL Editor:
    `insert into public.staff (user_id, email, role) select id, email, 'sales' from auth.users where email = 'new@example.com';`
    (use `'admin'`, `'sales'` or `'technician'`)

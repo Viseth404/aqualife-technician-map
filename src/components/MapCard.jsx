@@ -17,31 +17,7 @@ import ZoneDrawer from './ZoneDrawer';
 import TechnicianMarker from './TechnicianMarker';
 import ViewAllFilter from './ViewAllFilter';
 import ZoneAssignPanel from './ZoneAssignPanel';
-
-// Turn a small React drawing into a Leaflet icon centered on its point.
-const centeredIcon = (element) =>
-  L.divIcon({
-    className: 'map-label',
-    html: `<div style="transform:translate(-50%,-50%);width:max-content">${renderToStaticMarkup(element)}</div>`,
-    iconSize: [0, 0],
-  });
-
-const officeIcon = centeredIcon(
-  <div className="flex flex-col items-center">
-    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-lg ring-2" style={{ '--tw-ring-color': config.brandColor }}>
-      <img src={config.logoIcon} alt="" className="h-9 w-9 object-contain" />
-    </div>
-    <span className="mt-1 whitespace-nowrap rounded bg-white px-1.5 text-[11px] font-semibold shadow" style={{ color: config.brandColor }}>
-      {config.businessName}
-    </span>
-  </div>,
-);
-
-const customerIcon = L.divIcon({
-  className: 'map-label',
-  html: '<div style="font-size:36px;line-height:1;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))">📍</div>',
-  iconSize: [0, 0],
-});
+import { centeredIcon, customerIcon, officeIcon } from './mapIcons';
 
 export default function MapCard({
   technicians, // all technicians
