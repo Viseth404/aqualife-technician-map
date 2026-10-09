@@ -229,7 +229,7 @@ const text = {
     loginSubtitle: "Sign in to the Aqualife admin dashboard",
     forgotPassword: "Forgot your password?",
     forgotHint:
-      "Ask the Aqualife owner to reset it in Supabase (Authentication > Users).",
+      "Ask the Aqualife owner to reset the password.",
     wrongLogin: "Wrong email or password.",
     adminOnly: "Only Aqualife Teams can sign in.",
     email: "Email",
@@ -448,7 +448,7 @@ const text = {
     loginSubtitle: "ចូលទៅផ្ទាំងគ្រប់គ្រង Aqualife",
     forgotPassword: "ភ្លេចពាក្យសម្ងាត់?",
     forgotHint:
-      "សូមស្នើម្ចាស់ Aqualife ឱ្យកំណត់ឡើងវិញក្នុង Supabase (Authentication > Users)។",
+      "សូមស្នើម្ចាស់ Aqualife ឱ្យកំណត់ពាក្យសម្ងាត់ឡើងវិញ។",
     wrongLogin: "អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",
     adminOnly: "មានតែក្រុមការងារ Aqualife ទេដែលអាចចូលបាន។",
     email: "អ៊ីមែល",

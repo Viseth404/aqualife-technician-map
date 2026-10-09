@@ -1,5 +1,5 @@
 // Admin sign-in form (shadcn "login-04" block, adapted for Aqualife).
-// Left: email + password (Supabase). Right: the Aqualife logo image.
+// Left: the Aqualife logo image. Right: email + password (Supabase).
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -36,8 +36,8 @@ export function LoginForm({ className, ...props }) {
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
           <form onSubmit={submit} className="relative p-6 pt-12 md:p-8 md:pt-12">
-            {/* Language picker in the card's top-left corner */}
-            <div className="absolute top-4 left-4 md:top-5 md:left-5">
+            {/* Language picker in the card's top-right corner */}
+            <div className="absolute top-4 right-4 md:top-5 md:right-5">
               <LanguageSwitch variant="card" />
             </div>
             <FieldGroup>
@@ -98,8 +98,8 @@ export function LoginForm({ className, ...props }) {
             </FieldGroup>
           </form>
 
-          {/* Right side: Aqualife logo (hidden on phones). File: public/login-logo.jpg */}
-          <div className="relative hidden bg-white md:block">
+          {/* Left side: Aqualife logo (hidden on phones). File: public/login-logo.jpg */}
+          <div className="relative hidden bg-white md:order-first md:block">
             <img
               src={config.loginImage}
               alt={config.businessName}
