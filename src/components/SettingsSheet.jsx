@@ -79,7 +79,7 @@ function PasswordInput({ id, value, onChange }) {
   const [show, setShow] = useState(true)
   return (
     <div className="flex gap-2">
-      <Input id={id} type={show ? "text" : "password"} value={value} onChange={(e) => onChange(e.target.value)} minLength={8} required autoComplete="new-password" className="font-mono" />
+      <Input id={id} type={show ? "text" : "password"} value={value} onChange={(e) => onChange(e.target.value)} minLength={10} required autoComplete="new-password" className="font-mono" />
       <Button type="button" variant="outline" size="icon" onClick={() => setShow((s) => !s)} aria-label={show ? t("hide") : t("show")}>
         {show ? <EyeOff /> : <Eye />}
       </Button>
@@ -337,7 +337,7 @@ function ResetPasswordButton({ email, onReset, disabled }) {
         <PasswordInput id="reset-password" value={password} onChange={setPassword} />
         <AlertDialogFooter>
           <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction disabled={password.length < 8} onClick={() => onReset(password)}>{t("save")}</AlertDialogAction>
+          <AlertDialogAction disabled={password.length < 10} onClick={() => onReset(password)}>{t("save")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

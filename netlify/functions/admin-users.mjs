@@ -88,7 +88,7 @@ export default async (req) => {
         const password = String(body.password || '');
         const role = body.role;
         if (!EMAIL.test(email)) return json(400, { error: 'Enter a valid email' });
-        if (password.length < 8) return json(400, { error: 'Password must be at least 8 characters' });
+        if (password.length < 10) return json(400, { error: 'Password must be at least 10 characters' });
         if (!ROLES.includes(role)) return json(400, { error: 'Choose a role' });
         const { data, error } = await db.auth.admin.createUser({ email, password, email_confirm: true });
         if (error) return json(400, { error: error.message });
@@ -129,7 +129,7 @@ export default async (req) => {
       case 'resetPassword': {
         if (!UUID.test(body.userId || '')) return json(400, { error: 'Invalid user' });
         const password = String(body.password || '');
-        if (password.length < 8) return json(400, { error: 'Password must be at least 8 characters' });
+        if (password.length < 10) return json(400, { error: 'Password must be at least 10 characters' });
         const { error } = await db.auth.admin.updateUserById(body.userId, { password });
         if (error) return json(400, { error: error.message });
         return json(200, { ok: true });

@@ -39,7 +39,7 @@ export default function App() {
   }, []);
 
   // Which role does this account have? (supabase/migrations/005_staff_roles.sql)
-  // undefined = checking, null = no access, 'admin' | 'sales' | 'technician'
+  // undefined = checking, null = no access, 'error' = check failed, 'admin' | 'sales' | 'technician'
   const [role, setRole] = useState(isSupabaseConfigured ? undefined : 'superadmin'); // demo mode: full access
   const userId = session?.user?.id;
   useEffect(() => {
@@ -49,10 +49,8 @@ export default function App() {
     (async () => {
       const { data, error } = await supabase.rpc('my_role');
       if (cancelled) return;
-      if (!error) return setRole(data || null);
-      // Roles not set up yet (005 not run): fall back to the admin list (004), or allow if that's missing too.
-      const old = await supabase.rpc('is_admin');
-      if (!cancelled) setRole(old.error || old.data === true ? 'admin' : null);
+      // Fail closed: if the check itself fails, show an error instead of guessing a role.
+      setRole(error ? 'error' : data || null);
     })();
     return () => {
       cancelled = true;
@@ -62,10 +60,13 @@ export default function App() {
   // Admins can preview the phone screen that sales/technicians see.
   const [fieldPreview, setFieldPreview] = useState(false);
 
+  // A live build without Supabase keys must not fall into demo mode (no login, full access).
+  if (import.meta.env.PROD && !isSupabaseConfigured) return <CenteredMessage error text={t('notConfigured')} />;
   if (session === undefined) return <CenteredMessage text={t('loading')} />;
   if (session === null) return <Login />;
   if (role === undefined) return <CenteredMessage text={t('loading')} />;
   if (role === null) return <NotAdmin email={session.user?.email} />;
+  if (role === 'error') return <CenteredMessage error text={t('roleCheckFailed')} />;
   // Settings (prices, office) are shared by every screen.
   const isAdminLike = role === 'admin' || role === 'superadmin';
   return (

@@ -140,7 +140,7 @@ const text = {
     created: "Account created",
     giveTheseDetails:
       "Give these login details to the new person (shown once):",
-    passwordHint: 'At least 8 characters. Use "Generate" for a strong one.',
+    passwordHint: 'At least 10 characters. Use "Generate" for a strong one.',
     role: "Role",
     createAccount: "Create account",
     show: "Show",
@@ -236,6 +236,8 @@ const text = {
     password: "Password",
     signIn: "Sign in",
     loading: "Loading…",
+    roleCheckFailed: "Could not check your access. Check your internet and reload the page.",
+    notConfigured: "This site is not set up yet (database keys missing). Contact the super admin.",
   },
   km: {
     title: "ផែនទីទីតាំងបច្ចេកទេស",
@@ -361,7 +363,7 @@ const text = {
     addStaffDesc: "បង្កើតការចូល និងជ្រើសអ្វីដែលគេអាចមើលឃើញ។",
     created: "បានបង្កើតគណនី",
     giveTheseDetails: "ផ្ដល់ព័ត៌មានចូលទាំងនេះទៅបុគ្គលិកថ្មី (បង្ហាញតែម្ដង)៖",
-    passwordHint: 'យ៉ាងតិច ៨ តួ។ ប្រើ "បង្កើត" សម្រាប់ពាក្យសម្ងាត់រឹងមាំ។',
+    passwordHint: 'យ៉ាងតិច ១០ តួ។ ប្រើ "បង្កើត" សម្រាប់ពាក្យសម្ងាត់រឹងមាំ។',
     role: "តួនាទី",
     createAccount: "បង្កើតគណនី",
     show: "បង្ហាញ",
@@ -455,6 +457,8 @@ const text = {
     password: "ពាក្យសម្ងាត់",
     signIn: "ចូល",
     loading: "កំពុងផ្ទុក…",
+    roleCheckFailed: "មិនអាចពិនិត្យសិទ្ធិរបស់អ្នកបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ហើយផ្ទុកទំព័រឡើងវិញ។",
+    notConfigured: "គេហទំព័រនេះមិនទាន់បានរៀបចំនៅឡើយទេ (ខ្វះកូនសោមូលដ្ឋានទិន្នន័យ)។ សូមទាក់ទងអ្នកគ្រប់គ្រងកំពូល។",
   },
 };
 
