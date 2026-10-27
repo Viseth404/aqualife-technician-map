@@ -26,6 +26,7 @@ export const config = {
   tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   geocoderUrl: 'https://photon.komoot.io', // address search
+  reverseGeocoderUrl: 'https://nominatim.openstreetmap.org', // street address of a point (Phum / Sangkat / Khan)
   valhallaUrl: 'https://valhalla1.openstreetmap.de', // driving distance (car or moto routes)
   routingUrl: 'https://router.project-osrm.org', // backup driving distance (car only)
 

@@ -249,8 +249,8 @@ function Dashboard({ role, onFieldView }) {
       setMode('select'); // one click = one check
       if (!isDesktop) setPanelsOpen(true); // show the result
       // Look up the address of the clicked point and show it.
-      reverseGeocode(p, lang).then((label) => {
-        if (label) setCustomerPoint((cur) => (cur && cur.lat === p.lat && cur.lng === p.lng ? { ...cur, label } : cur));
+      reverseGeocode(p, lang).then((address) => {
+        if (address) setCustomerPoint((cur) => (cur && cur.lat === p.lat && cur.lng === p.lng ? { ...cur, ...address } : cur));
       });
     } else if (p) setFocus({ kind: 'point', position: p, at: Date.now() });
   };

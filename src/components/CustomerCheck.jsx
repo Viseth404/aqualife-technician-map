@@ -1,13 +1,13 @@
 // Customer check: search an address or pick a point on the map.
 // Shows which zone + technician covers it, the driving distance from the
 // Aqualife office, and the delivery fee.
-import { useEffect, useState } from 'react';
-import { CircleAlert, CircleCheck, Crosshair, Loader2, LocateFixed, MapPin, Search, UserPlus, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, CircleAlert, CircleCheck, Copy, Crosshair, Loader2, LocateFixed, MapPin, Search, UserPlus, X } from 'lucide-react';
 import { useLanguage } from '@/i18n';
 import { config } from '@/config';
 import { newId } from '@/lib/uuid';
 import { zonesAtPoint, fmt } from '@/lib/geo';
-import { parseMapsLink, searchAddress } from '@/lib/geocode';
+import { parseMapsLink, resolveShortLink, reverseGeocode, searchAddress } from '@/lib/geocode';
 import { deliveryFee } from '@/lib/pricing';
 import { activePricing, activeVehicle, isBlockedProvince, useSettings } from '@/lib/settings';
 import { isAvailable, zoneHandler } from '@/lib/availability';
@@ -39,7 +39,10 @@ export default function CustomerCheck({
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [linkHint, setLinkHint] = useState(false); // short Google link pasted
+  const [linkState, setLinkState] = useState(null); // null | 'busy' (opening a short link) | 'error'
+  // The point on screen right now, so a slow address lookup doesn't overwrite a newer pick.
+  const current = useRef(point);
+  current.current = point;
 
   // ---------- Address search (waits until you stop typing) ----------
   useEffect(() => {
@@ -79,10 +82,47 @@ export default function CustomerCheck({
     );
   };
 
+  // Switched English ⇄ Khmer: look up the same address again in the new language.
+  useEffect(() => {
+    const p = current.current;
+    if (!p?.parts) return;
+    reverseGeocode(p, lang).then((address) => {
+      const now = current.current;
+      if (!address || !now || now.lat !== p.lat || now.lng !== p.lng) return;
+      // Keep a place name from a pasted link in front ("Aeon Mall, …").
+      const old = [...new Set(Object.values(p.parts).filter(Boolean))].join(', ');
+      const label = p.label?.endsWith(old) ? p.label.slice(0, -old.length) + address.label : address.label;
+      onPointChange({ ...p, label, parts: address.parts });
+      setQuery(label);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
   const choose = (r) => {
     onPointChange(r);
     setQuery(r.label);
     setShowResults(false);
+  };
+
+  // Pasted a Google Maps link (long or short) or "lat, lng": jump to it, then fill in the street address.
+  const openLink = async (link) => {
+    setShowResults(false);
+    if (link.short) {
+      setLinkState('busy');
+      const long = await resolveShortLink(link.short);
+      link = long && parseMapsLink(long);
+      if (!link || link.short) return setLinkState('error');
+    }
+    setLinkState(null);
+    const p = { lat: link.lat, lng: link.lng, label: link.label || `${fmt(link.lat, 5)}, ${fmt(link.lng, 5)}` };
+    choose(p);
+    const address = await reverseGeocode(p, lang);
+    const same = current.current && current.current.lat === p.lat && current.current.lng === p.lng;
+    if (!address || !same) return;
+    // Keep the place name from the link in front: "Aeon Mall, Sothearos Blvd, Sangkat …"
+    const label = link.label && !address.label.startsWith(link.label) ? `${link.label}, ${address.label}` : address.label;
+    onPointChange({ ...p, label, parts: address.parts });
+    setQuery(label);
   };
 
   // ---------- Which zone / technician ----------
@@ -115,13 +155,9 @@ export default function CustomerCheck({
               const text = e.target.value;
               // Pasted a Google Maps link or "lat, lng"? Jump straight to it.
               const link = parseMapsLink(text);
-              setLinkHint(link === 'short');
-              if (link && link !== 'short') {
-                const label = link.label || `${fmt(link.lat, 5)}, ${fmt(link.lng, 5)}`;
-                choose({ ...link, label });
-                return;
-              }
               setQuery(text);
+              if (link) return openLink(link);
+              setLinkState(null);
               setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
@@ -130,8 +166,8 @@ export default function CustomerCheck({
             placeholder={t('searchAddress')}
             className="pl-8"
           />
-          {searching && <Loader2 className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
-          {showResults && query.trim().length >= 3 && !searching && !linkHint && (
+          {(searching || linkState === 'busy') && <Loader2 className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+          {showResults && query.trim().length >= 3 && !searching && !linkState && (
             <ul className="absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md">
               {results.length === 0 && <li className="px-2 py-1.5 text-sm text-muted-foreground">{t('noResults')}</li>}
               {results.map((r, i) => (
@@ -150,7 +186,7 @@ export default function CustomerCheck({
           )}
         </div>
 
-        {linkHint && <p className="text-xs text-amber-700">{t('shortLink')}</p>}
+        {linkState === 'error' && <p className="text-xs text-amber-700">{t('shortLink')}</p>}
 
         {locating === 'error' && <p className="text-xs text-destructive">{t('locationError')}</p>}
 
@@ -171,6 +207,7 @@ export default function CustomerCheck({
               onClick={() => {
                 onPointChange(null);
                 setQuery('');
+                setLinkState(null);
               }}
             >
               <X /> {t('clear')}
@@ -181,7 +218,7 @@ export default function CustomerCheck({
         {point && (
           <div className="space-y-3 pt-1 text-sm">
             <Separator />
-            <Row label={t('location')}>{point.label || `${fmt(point.lat, 5)}, ${fmt(point.lng, 5)}`}</Row>
+            <LocationRow point={point} />
 
             {outside ? (
               <Alert variant="destructive">
@@ -375,6 +412,97 @@ function SaveCustomerForm({ onSave, busy }) {
       </div>
     </form>
   );
+}
+
+// The customer's address, one part per row (City / Khan / Sangkat / Phum / Place / Street),
+// with one Copy button for the full address (works on phones too).
+// Row names follow the place: Phnom Penh has Khan + Sangkat; provinces have
+// Srok (or Krong for a provincial town) + Khum (or Sangkat inside a Krong).
+function addrLabel(key, parts) {
+  const inPhnomPenh = /phnom penh|ភ្នំពេញ/i.test(parts.city || '');
+  if (key === 'city') return inPhnomPenh ? 'addr_city' : 'addr_province';
+  if (key === 'khan') {
+    if (inPhnomPenh || /^(khan|ខណ្ឌ)/i.test(parts.khan)) return 'addr_khan';
+    return /^(krong|ក្រុង)/i.test(parts.khan) ? 'addr_krong' : 'addr_srok';
+  }
+  if (key === 'sangkat') {
+    if (inPhnomPenh || /^(sangkat|សង្កាត់)/i.test(parts.sangkat)) return 'addr_sangkat';
+    return 'addr_khum';
+  }
+  return `addr_${key}`;
+}
+
+function LocationRow({ point }) {
+  const { t } = useLanguage();
+  const full = point.label || `${fmt(point.lat, 6)}, ${fmt(point.lng, 6)}`;
+  // Every row is always shown; a part the map doesn't know (often Phum) says "Not found".
+  // Place (Borey, school, supermarket…) only when there is one.
+  const parts = point.parts && ['city', 'khan', 'sangkat', 'phum', 'place', 'street'].filter((key) => key !== 'place' || point.parts.place); // biggest area first
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-muted-foreground">{t('location')}</span>
+        <CopyButton text={full} />
+      </div>
+      <div className="space-y-1 rounded-md border bg-muted/40 px-2.5 py-2 select-text">
+        {parts ? (
+          parts.map((key) => (
+            <Row key={key} label={t(addrLabel(key, point.parts))}>
+              {point.parts[key] ? (
+                <span className="break-words">{point.parts[key]}</span>
+              ) : (
+                <span className="text-muted-foreground italic">{t('notFound')}</span>
+              )}
+            </Row>
+          ))
+        ) : (
+          <p className="break-words">{full}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CopyButton({ text }) {
+  const { t } = useLanguage();
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    if (await copyText(text)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+  return (
+    <Button type="button" variant="ghost" size="sm" onClick={copy} className="h-7 px-2 text-xs">
+      {copied ? <Check className="text-green-600" /> : <Copy />}
+      {copied ? t('copied') : t('copy')}
+    </Button>
+  );
+}
+
+// Copy to the clipboard. Older phones / non-https pages don't have navigator.clipboard,
+// so fall back to selecting a hidden text box and using the old copy command.
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const box = document.createElement('textarea');
+    box.value = text;
+    box.setAttribute('readonly', '');
+    box.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px'; // 16px: no zoom on iPhone
+    document.body.appendChild(box);
+    box.select();
+    box.setSelectionRange(0, text.length); // iPhone needs this
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      /* not supported */
+    }
+    box.remove();
+    return ok;
+  }
 }
 
 // Label on the left, value on the right.

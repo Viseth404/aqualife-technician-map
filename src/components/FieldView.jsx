@@ -27,8 +27,8 @@ export default function FieldView({ role, onExit }) {
   // GPS position or a tap on the map: show it right away, then fill in the street address.
   const useMyLocation = (p) => {
     setPoint(p)
-    reverseGeocode(p, lang).then((label) => {
-      if (label) setPoint((cur) => (cur && cur.lat === p.lat && cur.lng === p.lng ? { ...cur, label } : cur))
+    reverseGeocode(p, lang).then((address) => {
+      if (address) setPoint((cur) => (cur && cur.lat === p.lat && cur.lng === p.lng ? { ...cur, ...address } : cur))
     })
   }
 
