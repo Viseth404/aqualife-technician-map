@@ -1,11 +1,11 @@
 // The white card with the title, toolbar, and the map inside.
 // Everything drawn on the map lives here: office, technicians, zones,
 // zone labels, the customer point + route, the filter, and the zone panel.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from '../lib/leaflet';
-import { Lock, LockOpen, PenLine, X } from 'lucide-react';
+import { Lock, LockOpen, Maximize, Minimize, PenLine, X } from 'lucide-react';
 import { useLanguage } from '../i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +48,34 @@ export default function MapCard({
   const { t, lang } = useLanguage();
   const { office } = useSettings();
   const [openTechId, setOpenTechId] = useState(null);
+  const mapBoxRef = useRef(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // Use the browser's real fullscreen when it has one (desktop, Android).
+  // iPhone Safari doesn't, so there the map just covers the whole page.
+  const toggleFullscreen = () => {
+    const next = !fullscreen;
+    setFullscreen(next);
+    if (next) mapBoxRef.current?.requestFullscreen?.().catch(() => {});
+    else if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  };
+
+  // Pressing Esc leaves browser fullscreen, so follow it.
+  useEffect(() => {
+    const onChange = () => {
+      if (!document.fullscreenElement) setFullscreen(false);
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // Esc also closes the cover-the-page fallback.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e) => e.key === 'Escape' && setFullscreen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen]);
 
   const techById = useMemo(() => Object.fromEntries(technicians.map((x) => [x.id, x])), [technicians]);
 
@@ -124,7 +152,10 @@ export default function MapCard({
       </CardHeader>
 
       {/* The map ("isolate" keeps map layers under the page header) */}
-      <div className={`relative isolate h-[calc(100svh-190px)] min-h-[420px] ${editing ? 'ring-2 ring-amber-400 ring-inset' : ''}`}>
+      <div
+        ref={mapBoxRef}
+        className={`isolate bg-background ${fullscreen ? 'fixed inset-0 z-[2000] h-svh' : 'relative h-[calc(100svh-190px)] min-h-[420px]'} ${editing ? 'ring-2 ring-amber-400 ring-inset' : ''}`}
+      >
         <MapContainer
           center={[office.lat, office.lng]}
           zoom={config.defaultZoom}
@@ -215,7 +246,20 @@ export default function MapCard({
           {customerPoint && <Marker position={[customerPoint.lat, customerPoint.lng]} icon={customerIcon} zIndexOffset={2000} interactive={false} />}
 
           <MapFocus focus={focus} zones={zones} technicians={technicians} onOpenTech={setOpenTechId} />
+          <MapResize fullscreen={fullscreen} />
         </MapContainer>
+
+        {/* Fullscreen on / off (below the zoom buttons) */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute top-[84px] left-[10px] z-[1001] size-[34px] rounded-sm border-2 border-black/20 bg-white bg-clip-padding text-slate-800 shadow-none hover:bg-slate-100"
+          title={fullscreen ? t('exitFullscreen') : t('fullscreen')}
+          aria-label={fullscreen ? t('exitFullscreen') : t('fullscreen')}
+          onClick={toggleFullscreen}
+        >
+          {fullscreen ? <Minimize /> : <Maximize />}
+        </Button>
 
         <ViewAllFilter technicians={technicians} value={filter} onChange={onFilterChange} />
 
@@ -237,6 +281,23 @@ export default function MapCard({
       </div>
     </Card>
   );
+}
+
+// Leaflet must re-measure the map after it grows or shrinks.
+// Keep looking at the same spot instead of sliding to a corner.
+function MapResize({ fullscreen }) {
+  const map = useMap();
+  useLayoutEffect(() => {
+    // Still the old size here, so this is what the user was looking at.
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    const id = setTimeout(() => {
+      map.invalidateSize({ pan: false });
+      map.setView(center, zoom, { animate: false });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [map, fullscreen]);
+  return null;
 }
 
 // Moves the map when the side panel asks for it (click a zone / technician / search result).

@@ -192,6 +192,8 @@ const text = {
       "Could not get your location. Allow location access for this site and try again.",
     editMap: "Edit map",
     doneEditing: "Done",
+    fullscreen: "Full screen",
+    exitFullscreen: "Exit full screen",
     lockedHint:
       'Click a zone to see who handles it, then "Edit" to change it. Use "Edit map" to draw new zones or move pins.',
     locked: "Locked",
@@ -428,6 +430,8 @@ const text = {
       "មិនអាចយកទីតាំងរបស់អ្នកបានទេ។ សូមអនុញ្ញាតការចូលប្រើទីតាំងសម្រាប់គេហទំព័រនេះ ហើយព្យាយាមម្ដងទៀត។",
     editMap: "កែផែនទី",
     doneEditing: "រួចរាល់",
+    fullscreen: "ពេញអេក្រង់",
+    exitFullscreen: "ចាកចេញពីពេញអេក្រង់",
     lockedHint:
       'ចុចលើតំបន់ដើម្បីមើលអ្នកទទួលខុសត្រូវ បន្ទាប់មកចុច "កែ" ដើម្បីកែ។ ប្រើ "កែផែនទី" ដើម្បីគូរតំបន់ថ្មី ឬផ្លាស់ទីម្ជុល។',
     locked: "ចាក់សោ",
