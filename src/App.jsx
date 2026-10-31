@@ -181,12 +181,12 @@ function Dashboard({ role, onFieldView }) {
     setSelectedZoneId(id);
   };
 
-  // "Add Phnom Penh districts": create one zone per khan (skips names that already exist).
-  // Boundaries: OpenStreetMap, simplified so they are easy to edit. File: src/data/phnom-penh-districts.json
-  const addDistrictZones = async () => {
-    const { default: districts } = await import('./data/phnom-penh-districts.json');
+  // "Add areas": the admin picked ready-made areas (Phnom Penh khans, Kandal districts, …); each becomes a zone.
+  // List of areas: src/data/areaCatalog.js. Names that already exist are skipped.
+  const addDistrictZones = async (features) => {
     const existing = new Set(zones.map((z) => z.name.trim().toLowerCase()));
-    const toAdd = districts.features.filter((f) => !existing.has(f.properties.name.toLowerCase()));
+    const toAdd = features.filter((f) => !existing.has(f.properties.name.toLowerCase()));
+    if (!toAdd.length) return;
     setFilter('all');
     setMode('select');
     setSelectedZoneId(null);
@@ -201,7 +201,7 @@ function Dashboard({ role, onFieldView }) {
         }),
       ),
     );
-    setFocus({ kind: 'bounds', features: districts.features, at: Date.now() }); // zoom to all of Phnom Penh
+    setFocus({ kind: 'bounds', features: toAdd, at: Date.now() }); // zoom to the new zones
     setPanelsOpen(false);
   };
 

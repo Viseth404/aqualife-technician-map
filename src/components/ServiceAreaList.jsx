@@ -1,7 +1,6 @@
 // "Service Areas" card: every zone with technician, color, and area.
 // Click a zone to zoom to it on the map.
-import { Loader2, MapPinned, WandSparkles } from "lucide-react"
-import { useState } from "react"
+import { MapPinned } from "lucide-react"
 import { useLanguage } from "@/i18n"
 import { zoneAreaKm2, fmt } from "@/lib/geo"
 import { config } from "@/config"
@@ -10,50 +9,12 @@ import { isAvailable, zoneHandler } from "@/lib/availability"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import AddAreasDialog from "./AddAreasDialog"
 
 export default function ServiceAreaList({ zones, technicians, selectedZoneId, onZoneClick, onAddDistricts }) {
   const { t } = useLanguage()
   const techById = Object.fromEntries(technicians.map((x) => [x.id, x]))
   const total = zones.reduce((sum, z) => sum + zoneAreaKm2(z.geojson), 0)
-
-  // "Add Phnom Penh districts" button + confirm dialog.
-  const [adding, setAdding] = useState(false)
-  const addDistricts = async () => {
-    setAdding(true)
-    await onAddDistricts()
-    setAdding(false)
-  }
-  const districtButton = (variant) => (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant={variant} size="sm" disabled={adding} className={variant === "default" ? "mt-1" : ""}>
-          {adding ? <Loader2 className="animate-spin" /> : <WandSparkles />} {t("addDistricts")}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("addDistrictsTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("addDistrictsDesc")}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={addDistricts}>{t("addDistricts")}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  )
 
   return (
     <Card>
@@ -73,7 +34,13 @@ export default function ServiceAreaList({ zones, technicians, selectedZoneId, on
           <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
             <MapPinned className="size-6" />
             {t("noZonesYet")}
-            {onAddDistricts ? districtButton("default") : <span className="text-xs">{t("unlockToAdd")}</span>}
+            {onAddDistricts ? (
+              <div className="mt-1">
+                <AddAreasDialog zones={zones} onAdd={onAddDistricts} variant="default" />
+              </div>
+            ) : (
+              <span className="text-xs">{t("unlockToAdd")}</span>
+            )}
           </div>
         ) : (
           <ScrollArea className="max-h-80 [&>[data-slot=scroll-area-viewport]]:max-h-80 [&>[data-slot=scroll-area-viewport]>div]:!block">
@@ -127,7 +94,7 @@ export default function ServiceAreaList({ zones, technicians, selectedZoneId, on
             </ul>
           </ScrollArea>
         )}
-        {zones.length > 0 && onAddDistricts && <div className="mt-3 flex justify-end">{districtButton("outline")}</div>}
+        {zones.length > 0 && onAddDistricts && <div className="mt-3 flex flex-wrap justify-end gap-2"><AddAreasDialog zones={zones} onAdd={onAddDistricts} /></div>}
       </CardContent>
     </Card>
   )
